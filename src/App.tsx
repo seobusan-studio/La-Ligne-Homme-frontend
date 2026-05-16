@@ -5,6 +5,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Main from './Main/Main';     
 import Login from './Login/Login';   
 import Signup from './Signup/Signup'; 
+import AdminRoute from './Login/AdminRoute'; 
+import AdminMain from './Admin/AdminMain';
 
 import './App.css';
 
@@ -15,6 +17,10 @@ const App: React.FC = () => {
         <Route path="/" element={<Main />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminMain />} />
+        </Route>
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
