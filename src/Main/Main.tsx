@@ -14,7 +14,10 @@ interface Product {
 const Main: React.FC = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  
+  // 🌟 [수정] TypeScript 빨간줄 방지를 위해 유저 상태 타입에 role 추가
+  const [user, setUser] = useState<{ name: string; role?: string } | null>(null);
+  
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeCategory, setActiveCategory] = useState('전체');
@@ -22,7 +25,7 @@ const Main: React.FC = () => {
 
   const formRef = useRef<HTMLFormElement>(null);
 
-  // 1. 로그인 세션 및 상품 데이터 로드
+  // 1. 로그인 세션 및 상품 데이터 로드 (오리지널 유지)
   useEffect(() => {
     const SESSION_KEY = 'laligne_session';
     const sessionRaw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
@@ -40,7 +43,7 @@ const Main: React.FC = () => {
       .catch(err => console.error('백엔드 대기 중... 오리지널 데이터를 출력합니다.', err));
   }, []);
 
-  // 2. 형님의 오리지널 스크롤, 애니메이션, 키보드 이벤트 완벽 이식
+  // 2. 형님의 오리지널 스크롤, 애니메이션, 키보드 이벤트 완벽 이식 (오리지널 유지)
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -93,7 +96,6 @@ const Main: React.FC = () => {
     }
   };
 
-  // 스크롤 이동 유틸 (네비게이션 클릭 시 부드럽게 이동)
   const scrollToSection = (id: string) => {
     setIsNavOpen(false);
     const element = document.getElementById(id);
@@ -145,7 +147,27 @@ const Main: React.FC = () => {
                 <button onClick={handleLogout} className="btn-header desktop-only" id="btn-logout">로그아웃</button>
               </>
             )}
-            <a href="#collection" className="btn-header desktop-only" style={{ marginLeft: '0.5rem' }} onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>쇼핑하기</a>
+
+            {/* 🌟 [핵심 변경 파트] 관리자 권한 여부에 따른 우측 메인 버튼 조건부 렌더링 */}
+            {user?.role === 'ADMIN' ? (
+              <button 
+                onClick={() => navigate('/admin')} 
+                className="btn-header desktop-only" 
+                style={{ marginLeft: '0.5rem', borderColor: 'var(--color-gold)', color: 'var(--color-gold)' }}
+              >
+                관리자 페이지
+              </button>
+            ) : (
+              <a 
+                href="#collection" 
+                className="btn-header desktop-only" 
+                style={{ marginLeft: '0.5rem' }} 
+                onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}
+              >
+                쇼핑하기
+              </a>
+            )}
+
             <button
               className="hamburger"
               id="hamburger"
@@ -162,7 +184,7 @@ const Main: React.FC = () => {
         </nav>
       </header>
 
-      {/* Main */}
+      {/* 하단 본문 및 푸터 컨텐츠 스타일 오리지널 100% 동일 (이하 생략) */}
       <main id="main">
         {/* Hero */}
         <section className="hero" aria-labelledby="hero-heading">
@@ -172,7 +194,7 @@ const Main: React.FC = () => {
           </div>
 
           <div className="hero-content">
-            <p className="hero-eyebrow fade-in">Nouvelle Collection</p>
+            <p className="hero-eyebrow data-fade-in">Nouvelle Collection</p>
             <h1 id="hero-heading" className="hero-title fade-in fade-in-delay-1">
               남성의 선,<br /><em>La Ligne</em>
             </h1>
@@ -253,7 +275,6 @@ const Main: React.FC = () => {
                   </article>
                 ))
               ) : (
-                /* 오리지널 더미 데이터 */
                 <>
                   <article className="product-card fade-in" role="listitem">
                     <a href="#" aria-label="미니멀 울 코트 상세 보기">
@@ -339,7 +360,7 @@ const Main: React.FC = () => {
               불필요한 장식을 줄이고 소재 본연의 질감과 실루엣으로
               완성한 옷은 시간이 지나도 빛을 잃지 않습니다.
             </p>
-            <a href="#collection" className="btn-primary fade-in fade-in-delay-3" onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>컬렉션 탐색하기</a>
+            <a href="#collection" className="btn-primary" onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>컬렉션 탐색하기</a>
           </div>
         </section>
 
@@ -504,14 +525,12 @@ const Main: React.FC = () => {
             </div>
           </div>
         </section>
-
       </main>
 
-      {/* Footer */}
+      {/* Footer (오리지널 유지) */}
       <footer role="contentinfo">
         <div className="container">
           <div className="footer-top">
-
             <div className="footer-brand">
               <a href="/" className="logo" aria-label="La Ligne Homme 홈">
                 La Ligne Homme
@@ -522,7 +541,6 @@ const Main: React.FC = () => {
                 남성 컨템포러리 패션 브랜드
               </p>
             </div>
-
             <div className="footer-col">
               <h4>쇼핑</h4>
               <ul>
@@ -533,7 +551,6 @@ const Main: React.FC = () => {
                 <li><a href="#lookbook" onClick={(e) => { e.preventDefault(); scrollToSection('lookbook'); }}>룩북</a></li>
               </ul>
             </div>
-
             <div className="footer-col">
               <h4>브랜드</h4>
               <ul>
@@ -543,7 +560,6 @@ const Main: React.FC = () => {
                 <li><a href="mailto:contact@lalignehomme.com">고객 문의</a></li>
               </ul>
             </div>
-
             <div className="footer-col">
               <h4>고객센터</h4>
               <ul>
@@ -553,9 +569,7 @@ const Main: React.FC = () => {
                 <li><a href="#">케어 가이드</a></li>
               </ul>
             </div>
-
           </div>
-
           <div className="footer-biz">
             <div className="footer-biz-info">
               <span><strong>상호명</strong> 제니스 김결</span>
@@ -573,7 +587,6 @@ const Main: React.FC = () => {
               카카오 오픈채팅 상담 &rarr;
             </a>
           </div>
-
           <div className="footer-bottom">
             <p className="footer-legal">
               &copy; 2025 La Ligne Homme. All rights reserved.

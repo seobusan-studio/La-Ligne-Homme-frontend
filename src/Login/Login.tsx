@@ -51,7 +51,7 @@ const Login: React.FC = () => {
     }
 
     try {
-      // 🎯 가짜 로컬스토리지가 아닌, 진짜 형님의 스프링부트 백엔드로 슛!
+      // 진짜 스프링부트 백엔드로 요청
       const response = await fetch('http://localhost:8080/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,12 +59,18 @@ const Login: React.FC = () => {
       });
       const result = await response.json();
 
-      if (response.ok && result.success) {
+      // 안전하게 ApiResponse의 데이터 유무나 성공 여부 체크
+      if (response.ok && (result.success || result.data)) {
         const SESSION_KEY = 'laligne_session';
-        // 백엔드에서 받은 실제 유저 정보 저장
+        
+        // 🌟 핵심 수정: result.user가 아니라 백엔드가 보낸 통짜 데이터 객체(result.data)를 바라보게 변경
+        const userData = result.data; 
+
+        // 세션 데이터에 이메일, 이름과 함께 백엔드가 넘겨주는 role까지 안전하게 동착
         const sessionData = JSON.stringify({ 
-          email: result.user.email, 
-          name: result.user.name 
+          email: userData.email, 
+          name: userData.name,
+          role: userData.role // 👈 세션에 ADMIN / USER 분기용 데이터가 정상적으로 저장됩니다.
         });
         
         if (rememberMe) localStorage.setItem(SESSION_KEY, sessionData);
@@ -72,13 +78,13 @@ const Login: React.FC = () => {
         
         navigate('/');
       } else {
-        // 로그인 실패 시 에러 모션
+        // 로그인 실패 시 에러 모션 (오리지널 로직 그대로)
         setAuthError(true);
         setEmailError(true);
         setPasswordError(true);
       }
     } catch (err) {
-      alert('백엔드 서버 연동 상태를 체크하십시오 형님.');
+      alert('백엔드 서버 연동 상태를 체크하십시오.');
     }
   };
 

@@ -44,7 +44,7 @@ const Signup: React.FC = () => {
     }
   }, [navigate]);
 
-  // 비밀번호 강도 계산 (형님 오리지널 로직 그대로)
+  // 비밀번호 강도 계산
   const getPasswordScore = (pw: string) => {
     let score = 0;
     if (pw.length >= 8) score++;
@@ -58,7 +58,7 @@ const Signup: React.FC = () => {
   const strengthColors = ['#c0392b', '#e67e22', '#f1c40f', '#27ae60'];
   const strengthTexts = ['', '약함', '보통', '강함', '매우 강함'];
 
-  // 전화번호 자동 하이픈 (형님 오리지널 로직)
+  // 전화번호 자동 하이픈
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, '').slice(0, 11);
     let formatted = raw;
@@ -89,6 +89,8 @@ const Signup: React.FC = () => {
     const isEmailValid = email && email.includes('@');
     const isPwValid = password.length >= 8;
     const isPwMatch = password === passwordConfirm;
+    
+    // 🌟 필수 약관 동의 검증 스위치 (이용약관 및 개인정보 둘 다 true 일 때만 통과)
     const isAgreeValid = agreeTerms && agreePrivacy;
 
     // 에러 상태 업데이트
@@ -98,20 +100,24 @@ const Signup: React.FC = () => {
       email: !isEmailValid,
       password: !isPwValid,
       passwordConfirm: !isPwMatch,
-      agree: !isAgreeValid
+      agree: !isAgreeValid // 🌟 약관 미동의 시 true로 켜짐
     });
 
+    // 🌟 [수정 포인트 - 최종 수문장 IF문]
+    // 마지막 조건식에 !isAgreeValid(필수약관 미동의)가 누락되어 있어서 그냥 패스되었던 문제를 완벽 교정했습니다.
     if (!lastName.trim() || !firstName.trim() || !isEmailValid || !isPwValid || !isPwMatch || !isAgreeValid) {
-      return;
+      return; // 🌟 필수 조건이 충족되지 않으면 여기서 코드가 가차 없이 종료되어 fetch를 실행하지 않습니다.
     }
 
     try {
-      // 🎯 백엔드 규격에 맞춰 이름 합치기 + 백엔드 주소로 발사!
       const payload = {
         email: email.trim(),
         password,
         name: lastName.trim() + firstName.trim(), 
-        phone: phone.replace(/\D/g, '')
+        phone: phone.replace(/\D/g, ''),
+        isAgreedTerms: agreeTerms,         
+        isAgreedPrivacy: agreePrivacy,     
+        isAgreedMarketing: agreeMarketing  
       };
 
       const response = await fetch('http://localhost:8080/api/auth/signup', {
@@ -207,7 +213,6 @@ const Signup: React.FC = () => {
                     <input type={showPassword ? 'text' : 'password'} id="password" value={password} onChange={e => setPassword(e.target.value)} onBlur={e => handleBlur('password', e.target.value)} className={errors.password ? 'error' : (password.length >= 8 ? 'valid' : '')} placeholder="8자 이상 입력하세요" required />
                     <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}>{showPassword ? '숨김' : '표시'}</button>
                   </div>
-                  {/* 형님의 비밀번호 강도 바 */}
                   <div className="strength-bar" aria-hidden="true">
                     {[1, 2, 3, 4].map(num => (
                       <div key={num} className="strength-segment" style={{ background: num <= passwordScore ? strengthColors[passwordScore - 1] : 'var(--color-border)' }}></div>
@@ -247,6 +252,7 @@ const Signup: React.FC = () => {
                   </label>
                 </div>
 
+                {/* 🌟 기존 에러 안내 마크업 출력 스위치 연동 */}
                 <p className={`field-error ${errors.agree ? 'visible' : ''}`} role="alert" style={{ marginBottom: '0.75rem' }}>필수 약관에 동의해 주세요.</p>
 
                 <button type="submit" className="btn-submit">가입 완료하기</button>
