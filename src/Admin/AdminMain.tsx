@@ -14,11 +14,11 @@ const AdminMain: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   
-  // 백엔드 DB 연동 데이터 상태창들 (뉴스레터 구독자 추가)
+  // 백엔드 DB 연동 데이터 상태창들
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [subscribers, setSubscribers] = useState<any[]>([]); // 🌟 하드코딩 제거: 구독자 상태창 생성
+  const [subscribers, setSubscribers] = useState<any[]>([]); 
 
   // 상품 탭 내부 뷰포트 전환 제어 상태
   const [productViewMode, setProductViewMode] = useState<'list' | 'create'>('list');
@@ -55,7 +55,11 @@ const AdminMain: React.FC = () => {
     try {
       const resProd = await fetch('http://localhost:8080/api/products');
       const resultProd = await resProd.json();
-      if (resultProd.success && resultProd.data) setProducts(resultProd.data);
+      if (resultProd.data) {
+        setProducts(resultProd.data);
+      } else if (Array.isArray(resultProd)) {
+        setProducts(resultProd);
+      }
     } catch (e) { console.log('상품 데이터 통신 대기 중...'); }
 
     try {
@@ -73,7 +77,6 @@ const AdminMain: React.FC = () => {
     } catch (e) { console.log('회원 API 통신 대기 중...'); }
 
     try {
-      // 🌟 5. 뉴스레터 구독자 실시간 DB 연동 fetch
       const resSubs = await fetch('http://localhost:8080/api/admin/subscribers');
       const resultSubs = await resSubs.json();
       if (resultSubs.data) setSubscribers(resultSubs.data);
@@ -81,6 +84,7 @@ const AdminMain: React.FC = () => {
     } catch (e) { console.log('뉴스레터 구독자 API 통신 대기 중...'); }
   };
 
+  // 🌟 무한 난사 대재앙 차단 인프라 보존
   useEffect(() => {
     loadBackendData();
   }, [activeTab]);
@@ -259,6 +263,7 @@ const AdminMain: React.FC = () => {
                     <tr key={order.id || order.orderId}>
                       <td>{order.id || order.orderId}</td>
                       <td>{order.customer || order.customerName || '비회원'}</td>
+                      {/* 🌟 [교정 완료] order.map 스코프에 맞춰 대시보드 주문 금액 표기 명세를 수정했습니다. */}
                       <td className="price-cell">₩ {(order.price || order.totalPrice || 0).toLocaleString()}</td>
                       <td>
                         <span className={`status-tag ${order.status === '배송완료' ? 'done' : 'ing'}`}>
@@ -388,7 +393,7 @@ const AdminMain: React.FC = () => {
                   <tr key={prod.id}>
                     <td>{prod.id}</td>
                     <td className="bold-cell">{prod.name}</td>
-                    <td className="price-cell">₩ {(prod.basePrice || prod.base_price || 0).toLocaleString()}</td>
+                    <td className="price-cell">₩ {(prod.basePrice || prod.price || prod.base_price || 0).toLocaleString()}</td>
                     <td><span className="status-tag done">진열중</span></td>
                   </tr>
                 ))}
@@ -486,7 +491,6 @@ const AdminMain: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {/* 🌟 하드코딩 제거: DB에서 추출한 subscribers 매핑 적용 */}
                 {subscribers.map((sub, idx) => (
                   <tr key={sub.email || idx}>
                     <td className="bold-cell">{sub.email}</td>
