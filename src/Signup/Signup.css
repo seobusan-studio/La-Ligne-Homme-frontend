@@ -1,0 +1,159 @@
+/* src/Signup/Signup.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+
+.signup-page-box {
+  color-scheme: light dark;
+  --color-black:   #0c0c0c;
+  --color-white:   #fafafa;
+  --color-gold:    #b89a6a;
+  --color-gold-lt: #d4b896;
+  --color-muted:   #7a7a7a;
+  --color-border:  #e0e0e0;
+  --color-bg:      #ffffff;
+  --color-bg-alt:  #f7f5f2;
+  --color-text:    #0c0c0c;
+  --color-text-sub:#5a5a5a;
+  --color-error:   #c0392b;
+  --color-success: #27ae60;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans:  'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --header-h: 72px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (prefers-color-scheme: dark) {
+  .signup-page-box {
+    --color-bg:      #0c0c0c;
+    --color-bg-alt:  #141414;
+    --color-text:    #f0ede8;
+    --color-text-sub:#9a9a9a;
+    --color-border:  #2a2a2a;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signup-page-box *, .signup-page-box *::before, .signup-page-box *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+.signup-page-box *, .signup-page-box *::before, .signup-page-box *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.signup-page-box a { color: inherit; text-decoration: none; }
+.signup-page-box :focus-visible { outline: 2px solid var(--color-gold); outline-offset: 3px; }
+
+.signup-page-box .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* ─── Header ─── */
+.signup-page-box header { position: sticky; top: 0; z-index: 100; height: var(--header-h); background: var(--color-bg); border-bottom: 1px solid var(--color-border); }
+.signup-page-box .header-nav { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: var(--header-h); }
+.signup-page-box .logo { font-family: var(--font-serif); font-size: 1.25rem; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text); }
+.signup-page-box .logo span { display: block; font-size: 0.6rem; font-family: var(--font-sans); font-weight: 300; letter-spacing: 0.35em; text-transform: uppercase; color: var(--color-muted); margin-top: -2px; }
+.signup-page-box .header-back { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-text-sub); transition: color 0.2s; }
+.signup-page-box .header-back:hover { color: var(--color-text); }
+.signup-page-box .header-back::before { content: '←'; }
+
+/* ─── Main Layout ─── */
+.signup-page-box main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - var(--header-h)); }
+
+/* ─── Visual Panel ─── */
+.signup-page-box .signup-visual { position: relative; background: var(--color-black); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 4rem; }
+.signup-page-box .visual-bg { position: absolute; inset: 0; background: linear-gradient(160deg, #1a1612 0%, #2e2218 50%, #0c0c0c 100%); }
+.signup-page-box .visual-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%); }
+.signup-page-box .visual-content { position: relative; z-index: 1; }
+.signup-page-box .visual-label { font-size: 0.65rem; letter-spacing: 0.5em; text-transform: uppercase; color: var(--color-gold); margin-bottom: 1.25rem; }
+.signup-page-box .visual-title { font-family: var(--font-serif); font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 300; line-height: 1.15; color: #f0ede8; margin-bottom: 1.25rem; }
+.signup-page-box .visual-title em { font-style: italic; color: var(--color-gold-lt); }
+.signup-page-box .visual-desc { font-size: 0.85rem; font-weight: 300; line-height: 1.85; color: rgba(240,237,232,0.55); max-width: 36ch; }
+.signup-page-box .visual-perks { margin-top: 2rem; display: flex; flex-direction: column; gap: 0.75rem; list-style: none; }
+.signup-page-box .perk-item { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; color: rgba(240,237,232,0.65); }
+.signup-page-box .perk-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--color-gold); flex-shrink: 0; }
+
+/* ─── Form Panel ─── */
+.signup-page-box .signup-form-panel { display: flex; flex-direction: column; justify-content: center; padding: 4rem 5rem; background: var(--color-bg); overflow-y: auto; }
+.signup-page-box .form-header { margin-bottom: 2.5rem; }
+.signup-page-box .form-eyebrow { font-size: 0.65rem; letter-spacing: 0.4em; text-transform: uppercase; color: var(--color-gold); margin-bottom: 0.75rem; }
+.signup-page-box .form-title { font-family: var(--font-serif); font-size: 2rem; font-weight: 300; line-height: 1.2; margin-bottom: 0.5rem; }
+.signup-page-box .form-subtitle { font-size: 0.82rem; font-weight: 300; color: var(--color-text-sub); }
+
+/* ─── Form Fields ─── */
+.signup-page-box .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.signup-page-box .field { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.25rem; }
+.signup-page-box .field label { font-size: 0.7rem; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-text-sub); }
+.signup-page-box .field label .required { color: var(--color-gold); margin-left: 2px; }
+.signup-page-box .field input { height: 52px; padding: 0 1rem; font-family: var(--font-sans); font-size: 0.9rem; font-weight: 300; color: var(--color-text); background: var(--color-bg); border: 1px solid var(--color-border); outline: none; transition: border-color 0.2s; -webkit-appearance: none; appearance: none; border-radius: 0; }
+.signup-page-box .field input:focus { border-color: var(--color-gold); }
+.signup-page-box .field input.error { border-color: var(--color-error); }
+.signup-page-box .field input.valid { border-color: var(--color-success); }
+.signup-page-box .field-hint { font-size: 0.72rem; color: var(--color-text-sub); margin-top: 0.1rem; }
+.signup-page-box .field-error { font-size: 0.72rem; color: var(--color-error); margin-top: 0.1rem; display: none; }
+.signup-page-box .field-error.visible { display: block; }
+
+/* Password strength */
+.signup-page-box .password-wrap { position: relative; }
+.signup-page-box .password-toggle { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-sub); transition: color 0.2s; padding: 0.25rem; }
+.signup-page-box .password-toggle:hover { color: var(--color-text); }
+.signup-page-box .strength-bar { display: flex; gap: 4px; margin-top: 0.4rem; }
+.signup-page-box .strength-segment { height: 2px; flex: 1; background: var(--color-border); transition: background 0.3s; }
+.signup-page-box .strength-label { font-size: 0.7rem; color: var(--color-text-sub); margin-top: 0.25rem; }
+
+/* Checkboxes */
+.signup-page-box .agree-section { margin: 1.25rem 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.signup-page-box .agree-all { padding-bottom: 0.75rem; border-bottom: 1px solid var(--color-border); margin-bottom: 0.25rem; }
+.signup-page-box .checkbox-label { display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; font-size: 0.82rem; font-weight: 300; line-height: 1.5; color: var(--color-text); }
+.signup-page-box .checkbox-label input[type="checkbox"] { appearance: none; -webkit-appearance: none; width: 18px; height: 18px; min-width: 18px; border: 1px solid var(--color-border); background: var(--color-bg); cursor: pointer; position: relative; margin-top: 1px; transition: border-color 0.2s, background 0.2s; flex-shrink: 0; }
+.signup-page-box .checkbox-label input[type="checkbox"]:checked { background: var(--color-text); border-color: var(--color-text); }
+.signup-page-box .checkbox-label input[type="checkbox"]:checked::after { content: ''; position: absolute; left: 4px; top: 1px; width: 6px; height: 10px; border: 1.5px solid var(--color-bg); border-top: none; border-left: none; transform: rotate(45deg); }
+.signup-page-box .checkbox-label input[type="checkbox"]:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
+.signup-page-box .agree-link { color: var(--color-gold); text-decoration: underline; text-underline-offset: 2px; }
+.signup-page-box .agree-badge { font-size: 0.65rem; letter-spacing: 0.1em; padding: 0.15rem 0.4rem; border: 1px solid var(--color-border); color: var(--color-text-sub); margin-left: 0.25rem; }
+
+/* Submit */
+.signup-page-box .btn-submit { width: 100%; height: 56px; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 400; letter-spacing: 0.25em; text-transform: uppercase; background: var(--color-text); color: var(--color-bg); border: 1px solid var(--color-text); cursor: pointer; transition: background 0.25s, color 0.25s, transform 0.15s; margin-top: 0.5rem; }
+.signup-page-box .btn-submit:hover { background: var(--color-gold); border-color: var(--color-gold); }
+.signup-page-box .btn-submit:active { transform: scale(0.99); }
+.signup-page-box .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* Divider */
+.signup-page-box .form-divider { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; }
+.signup-page-box .form-divider::before, .signup-page-box .form-divider::after { content: ''; flex: 1; height: 1px; background: var(--color-border); }
+.signup-page-box .form-divider span { font-size: 0.7rem; letter-spacing: 0.15em; color: var(--color-text-sub); text-transform: uppercase; white-space: nowrap; }
+
+/* Login link */
+.signup-page-box .form-login-link { text-align: center; font-size: 0.82rem; font-weight: 300; color: var(--color-text-sub); }
+.signup-page-box .form-login-link span { font-weight: 400; }
+.signup-page-box .form-login-link span:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+/* Success state */
+.signup-page-box .success-panel { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 2rem; gap: 1.5rem; }
+.signup-page-box .success-panel.visible { display: flex; }
+.signup-page-box .success-icon { width: 64px; height: 64px; border: 1px solid var(--color-gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--color-gold); }
+.signup-page-box .success-title { font-family: var(--font-serif); font-size: 2rem; font-weight: 300; }
+.signup-page-box .success-desc { font-size: 0.875rem; color: var(--color-text-sub); line-height: 1.85; max-width: 36ch; }
+.signup-page-box .btn-to-home { display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 2.5rem; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 400; letter-spacing: 0.2em; text-transform: uppercase; background: var(--color-text); color: var(--color-bg); border: 1px solid var(--color-text); transition: background 0.2s; }
+.signup-page-box .btn-to-home:hover { background: var(--color-gold); border-color: var(--color-gold); }
+
+/* ─── Footer ─── */
+.signup-page-box footer { background: var(--color-text); color: var(--color-bg); padding: 1.5rem 2rem; text-align: center; }
+.signup-page-box footer p { font-size: 0.72rem; font-weight: 300; color: rgba(255,255,255,0.3); }
+
+/* ─── Responsive ─── */
+@media (max-width: 900px) {
+  .signup-page-box main { grid-template-columns: 1fr; }
+  .signup-page-box .signup-visual { display: none; }
+  .signup-page-box .signup-form-panel { padding: 3rem 2rem; }
+}
+@media (max-width: 480px) {
+  .signup-page-box .signup-form-panel { padding: 2.5rem 1.25rem; }
+  .signup-page-box .form-row { grid-template-columns: 1fr; }
+}
