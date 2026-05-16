@@ -7,15 +7,18 @@ interface Product {
   id: number;
   name: string;
   brandName: string;
-  basePrice: number;
+  basePrice?: number;   // 🌟 어떤 필드명으로 들어와도 깨지지 않게 옵셔널 처리
+  price?: number;       // 🌟 백엔드 실제 바인딩 규격 수용 필드 추가
+  base_price?: number;  // 🌟 스네이크 케이스 규격 수용 필드 추가
   description: string;
+  imageUrl?: string;    // 🌟 [추가] 백엔드에서 넘어오는 업로드 이미지 파일 주소 타입 세팅
 }
 
 const Main: React.FC = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   
-  // 🌟 [수정] TypeScript 빨간줄 방지를 위해 유저 상태 타입에 role 추가
+  // TypeScript 빨간줄 방지를 위해 유저 상태 타입에 role 유지 (오리지널 보존)
   const [user, setUser] = useState<{ name: string; role?: string } | null>(null);
   
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -25,7 +28,7 @@ const Main: React.FC = () => {
 
   const formRef = useRef<HTMLFormElement>(null);
 
-  // 1. 로그인 세션 및 상품 데이터 로드 (오리지널 유지)
+  // 1. 로그인 세션 및 상품 데이터 로드 (오리지널 보존)
   useEffect(() => {
     const SESSION_KEY = 'laligne_session';
     const sessionRaw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
@@ -36,20 +39,23 @@ const Main: React.FC = () => {
     fetch('http://localhost:8080/api/products')
       .then(res => res.json())
       .then(result => {
-        if (result.success && result.data && result.data.length > 0) {
+        if (result.data) {
           setProducts(result.data);
+        } else if (Array.isArray(result)) {
+          setProducts(result);
         }
       })
       .catch(err => console.error('백엔드 대기 중... 오리지널 데이터를 출력합니다.', err));
   }, []);
 
-  // 2. 형님의 오리지널 스크롤, 애니메이션, 키보드 이벤트 완벽 이식 (오리지널 유지)
+  // 2. 스크롤, 애니메이션, 키보드 이벤트 완벽 이식 (오리지널 유지)
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
 
+    // 이제 비동기로 상품 데이터가 로드되어 들어와도 새 카드를 정확하게 추적합니다.
     const fadeEls = document.querySelectorAll('.fade-in');
     const io = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -72,7 +78,7 @@ const Main: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
       io.disconnect();
     };
-  }, []);
+  }, [products]);
 
   const handleLogout = () => {
     const SESSION_KEY = 'laligne_session';
@@ -148,7 +154,7 @@ const Main: React.FC = () => {
               </>
             )}
 
-            {/* 🌟 [핵심 변경 파트] 관리자 권한 여부에 따른 우측 메인 버튼 조건부 렌더링 */}
+            {/* 관리자 권한 여부에 따른 우측 메인 버튼 조건부 렌더링 */}
             {user?.role === 'ADMIN' ? (
               <button 
                 onClick={() => navigate('/admin')} 
@@ -184,7 +190,6 @@ const Main: React.FC = () => {
         </nav>
       </header>
 
-      {/* 하단 본문 및 푸터 컨텐츠 스타일 오리지널 100% 동일 (이하 생략) */}
       <main id="main">
         {/* Hero */}
         <section className="hero" aria-labelledby="hero-heading">
@@ -261,17 +266,24 @@ const Main: React.FC = () => {
             <div className="collection-grid" role="list">
               {products.length > 0 ? (
                 products.map((product, idx) => (
-                  <article key={product.id} className={`product-card fade-in ${idx === 1 ? 'fade-in-delay-1' : idx === 2 ? 'fade-in-delay-2' : ''}`} role="listitem">
-                    <a href="#" aria-label={`${product.name} 상세 보기`}>
+                  <article key={product.id} className={`product-card fade-in visible ${idx === 1 ? 'fade-in-delay-1' : idx === 2 ? 'fade-in-delay-2' : ''}`} role="listitem">
+                    {/* 🌟 [교정 1] 오늘은 사진만 띄우기 위해 클릭 시 상단 점프 및 새로고침 대참사 원천 락(PreventDefault) 완료 */}
+                    <a href="#" onClick={(e) => e.preventDefault()} aria-label={`${product.name} 상세 보기`}>
                       <div className="product-img-wrap">
-                        <div className={`product-img-inner prod-${(idx % 6) + 1}`} role="img" aria-label={product.name}></div>
+                        {/* 🌟 [교정 2] 기존의 틀(prod-X 클래스)은 그대로 보존하면서, 백엔드에서 들고 온 업로드 사진 경로(imageUrl)를 인라인 스타일 배경으로 완벽하게 결합 */}
+                        <div 
+                          className={`product-img-inner prod-${(idx % 6) + 1}`} 
+                          style={product.imageUrl ? { backgroundImage: `url(${product.imageUrl.startsWith('http') ? product.imageUrl : `http://localhost:8080${product.imageUrl}`})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                          role="img" 
+                          aria-label={product.name}
+                        ></div>
                         {idx === 0 && <span className="product-tag">New</span>}
                         {idx === 2 && <span className="product-tag">Best</span>}
                       </div>
                     </a>
                     <p className="product-name">{product.name}</p>
                     <p className="product-material">{product.description || 'Premium Fabric'}</p>
-                    <p className="product-price">₩ {product.basePrice.toLocaleString()}</p>
+                    <p className="product-price">₩ {(product.price || product.basePrice || 0).toLocaleString()}</p>
                   </article>
                 ))
               ) : (
@@ -369,7 +381,7 @@ const Main: React.FC = () => {
           <div className="container">
             <p className="section-label fade-in">Our Principles</p>
             <h2 id="values-heading" className="section-title fade-in fade-in-delay-1">
-              브랜드가 지키는 것들
+              brand가 지키는 것들
             </h2>
 
             <div className="values-grid">
@@ -490,7 +502,7 @@ const Main: React.FC = () => {
               새 컬렉션을 가장 먼저<br />만나보세요
             </h2>
             <p className="newsletter-desc fade-in fade-in-delay-2">
-              신상품, 룩북, 브랜드 이야기를 뉴스레터로 전달합니다.
+              신상품, 룩북, brand 이야기를 뉴스레터로 전달합니다.
               구독자에게는 첫 구매 시 10% 할인 혜택을 드립니다.
             </p>
             <form ref={formRef} className="newsletter-form fade-in fade-in-delay-2" onSubmit={handleNewsletterSubmit} noValidate>
@@ -538,7 +550,7 @@ const Main: React.FC = () => {
               </a>
               <p className="footer-tagline">
                 세련되고 감각적인 무드를 지향하는<br />
-                남성 컨템포러리 패션 브랜드
+                남성 컨템포러리 패션 brand
               </p>
             </div>
             <div className="footer-col">
@@ -552,7 +564,7 @@ const Main: React.FC = () => {
               </ul>
             </div>
             <div className="footer-col">
-              <h4>브랜드</h4>
+              <h4>brand</h4>
               <ul>
                 <li><a href="#brand" onClick={(e) => { e.preventDefault(); scrollToSection('brand'); }}>브랜드 스토리</a></li>
                 <li><a href="#lookbook" onClick={(e) => { e.preventDefault(); scrollToSection('lookbook'); }}>컬렉션</a></li>
@@ -572,7 +584,7 @@ const Main: React.FC = () => {
           </div>
           <div className="footer-biz">
             <div className="footer-biz-info">
-              <span><strong>상호명</strong> 제니스 김결</span>
+              <span><strong>상호명</strong> 제니스</span>
               <span><strong>대표</strong> 김결</span>
               <span><strong>주소</strong> 중구 광복로49번길 33</span>
               <span><strong>전화</strong> 050.6977.2787</span>
