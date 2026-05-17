@@ -1,0 +1,134 @@
+.lookup-page-container,
+.lookup-page-container * {
+  color-scheme: light !important;
+  box-sizing: border-box;
+}
+
+.lookup-page-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 140px 20px 100px 20px;
+  background-color: #ffffff !important;
+  color: #111111 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+}
+
+.lookup-header {
+  margin-bottom: 35px;
+  border-bottom: 1px solid #111111 !important;
+  padding-bottom: 20px;
+}
+
+.lookup-header h1 {
+  font-size: 2.2rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  margin: 0 0 8px 0;
+  color: #111111 !important;
+}
+
+.lookup-header p {
+  font-size: 0.88rem;
+  color: #666666 !important;
+}
+
+.lookup-main-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 50px;
+  align-items: flex-start;
+}
+
+.lookup-form-card, .receipt-card {
+  background-color: #ffffff !important;
+  border: 1px solid #eeeeee !important;
+  padding: 30px;
+}
+
+.lookup-form-card h3, .receipt-card h3 {
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  margin-top: 0;
+  margin-bottom: 25px;
+  border-left: 2px solid #111111 !important;
+  padding-left: 8px;
+  color: #111111 !important;
+}
+
+.lookup-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.lookup-input-group label {
+  font-size: 0.78rem;
+  color: #555555 !important;
+  font-weight: 500;
+}
+
+.lookup-input-group input {
+  padding: 13px;
+  background-color: #ffffff !important;
+  border: 1px solid #dddddd !important;
+  color: #111111 !important;
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.lookup-input-group input:focus {
+  border-color: #111111 !important;
+}
+
+.btn-lookup-execute {
+  width: 100%;
+  background-color: #111111 !important;
+  color: #ffffff !important;
+  border: none;
+  padding: 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.receipt-placeholder-box {
+  border: 1px dashed #dddddd !important;
+  padding: 80px 30px;
+  text-align: center;
+  color: #888888 !important;
+  font-size: 0.88rem;
+}
+
+.receipt-card {
+  background-color: #fcfcfc !important;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  margin-bottom: 14px;
+  color: #444444 !important;
+}
+
+.bold-text {
+  font-weight: 600;
+  color: #111111 !important;
+}
+
+.price-tag {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111111 !important;
+}
+
+.status-badge {
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.shipping { background-color: #eef7ff !important; color: #0066cc !important; }
+.status-badge.delivered { background-color: #f0fdf4 !important; color: #16a34a !important; }

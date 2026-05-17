@@ -1,4 +1,3 @@
-// src/Main/Main.tsx
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Main.css';
@@ -7,12 +6,23 @@ interface Product {
   id: number;
   name: string;
   brandName: string;
-  basePrice?: number;   // 🌟 어떤 필드명으로 들어와도 깨지지 않게 옵셔널 처리
-  price?: number;       // 🌟 백엔드 실제 바인딩 규격 수용 필드 추가
-  base_price?: number;  // 🌟 스네이크 케이스 규격 수용 필드 추가
+  basePrice?: number;   // 어떤 필드명으로 들어와도 깨지지 않게 옵셔널 처리
+  price?: number;       // 백엔드 실제 바인딩 규격 수용 필드 추가
+  base_price?: number;  // 스네이크 케이스 규격 수용 필드 추가
   description: string;
-  imageUrl?: string;    // 🌟 [추가] 백엔드에서 넘어오는 업로드 이미지 파일 주소 타입 세팅
+  imageUrl?: string;    // 백엔드에서 넘어오는 업로드 이미지 파일 주소 타입 세팅
+  categoryId?: number;  // 탭 필터링 제어를 위한 카테고리 아이디 명세 확장
+  status?: string;      // 어드민 판매 상태(ON_SALE, STOPPED) 연동을 위한 명세 확장
+  isVisible?: boolean;  // 어드민 진열 여부(true, false) 연동을 위한 명세 확장
 }
+
+// 한글 카테고리 버튼 이름과 백엔드 DB 고유 ID를 바인딩하기 위한 매핑 사전 구축
+const CATEGORY_ID_MAP: Record<string, number> = {
+  '아우터': 1,
+  '티셔츠 / 셔츠': 2,
+  '가디건 / 니트': 3,
+  '팬츠': 4
+};
 
 const Main: React.FC = () => {
   const navigate = useNavigate();
@@ -78,7 +88,7 @@ const Main: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
       io.disconnect();
     };
-  }, [products]);
+  }, [products, activeCategory]); // 탭이 변경되어 리스트가 교체될 때도 fade-in 애니메이션 상시 작동
 
   const handleLogout = () => {
     const SESSION_KEY = 'laligne_session';
@@ -142,6 +152,9 @@ const Main: React.FC = () => {
           <div className="nav-right" id="nav-right">
             {!user ? (
               <>
+                {/* 🌟 [교정 추가] 비회원 상태일 때도 장바구니 이용 및 자신이 산 주문 조회가 가능하도록 정문 오픈! */}
+                <button onClick={() => navigate('/cart')} className="btn-header desktop-only" id="btn-cart" style={{ marginRight: '0.35rem' }}>장바구니</button>
+                <button onClick={() => navigate('/guest-lookup')} className="btn-header desktop-only" id="btn-guest-lookup" style={{ marginRight: '0.35rem' }}>비회원 주문조회</button>
                 <button onClick={() => navigate('/login')} className="btn-header desktop-only" id="btn-login">로그인</button>
                 <button onClick={() => navigate('/signup')} className="btn-header desktop-only" id="btn-signup">회원가입</button>
               </>
@@ -150,12 +163,21 @@ const Main: React.FC = () => {
                 <span className="nav-user desktop-only" id="nav-user" style={{ fontSize: '0.78rem', fontWeight: 400, letterSpacing: '0.05em', color: 'var(--color-text-sub)' }}>
                   {user.name}님
                 </span>
+                
+                {/* 최고 관리자(ADMIN)가 아닐 때만 장바구니와 마이페이지 런타임 버튼이 출현하도록 완벽 제어벽 가동! */}
+                {user.role !== 'ADMIN' && (
+                  <>
+                    <button onClick={() => navigate('/cart')} className="btn-header desktop-only" id="btn-cart" style={{ marginRight: '0.35rem' }}>장바구니</button>
+                    <button onClick={() => navigate('/mypage')} className="btn-header desktop-only" id="btn-mypage" style={{ marginRight: '0.35rem' }}>마이페이지</button>
+                  </>
+                )}
+                
                 <button onClick={handleLogout} className="btn-header desktop-only" id="btn-logout">로그아웃</button>
               </>
             )}
 
             {/* 관리자 권한 여부에 따른 우측 메인 버튼 조건부 렌더링 */}
-            {user?.role === 'ADMIN' ? (
+            {user?.role === 'ADMIN' && (
               <button 
                 onClick={() => navigate('/admin')} 
                 className="btn-header desktop-only" 
@@ -163,15 +185,6 @@ const Main: React.FC = () => {
               >
                 관리자 페이지
               </button>
-            ) : (
-              <a 
-                href="#collection" 
-                className="btn-header desktop-only" 
-                style={{ marginLeft: '0.5rem' }} 
-                onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}
-              >
-                쇼핑하기
-              </a>
             )}
 
             <button
@@ -205,7 +218,7 @@ const Main: React.FC = () => {
             </h1>
             <p className="hero-subtitle fade-in fade-in-delay-2">
               라 린느 옴므는 프랑스어로 '남성의 선'을 의미합니다.<br />
-              깔끔한 실루엣과 미니멀한 디자인으로
+              깔끔한 실루엣 and 미니멀한 디자인으로
               현대 남성의 감각을 완성합니다.
             </p>
             <div className="hero-cta-group fade-in fade-in-delay-3">
@@ -228,7 +241,7 @@ const Main: React.FC = () => {
                 '라 린느 옴므(La Ligne Homme)'는 세련되고 감각적인 무드를 지향하는
                 남성 컨템포러리 패션 브랜드입니다.<br />
                 프랑스어로 '남성의 선'이라는 의미를 담고 있는 만큼,
-                깔끔한 실루엣과 미니멀한 디자인이 특징입니다.
+                깔끔한 실루엣 and 미니멀한 디자인이 특징입니다.
                 <br /><br />
                 과하지 않고, 부족하지도 않게. 정제된 선 하나에 담긴 감각이
                 현대 남성의 일상을 더욱 특별하게 만들어 드립니다.
@@ -265,27 +278,44 @@ const Main: React.FC = () => {
 
             <div className="collection-grid" role="list">
               {products.length > 0 ? (
-                products.map((product, idx) => (
-                  <article key={product.id} className={`product-card fade-in visible ${idx === 1 ? 'fade-in-delay-1' : idx === 2 ? 'fade-in-delay-2' : ''}`} role="listitem">
-                    {/* 🌟 [교정 1] 오늘은 사진만 띄우기 위해 클릭 시 상단 점프 및 새로고침 대참사 원천 락(PreventDefault) 완료 */}
-                    <a href="#" onClick={(e) => e.preventDefault()} aria-label={`${product.name} 상세 보기`}>
-                      <div className="product-img-wrap">
-                        {/* 🌟 [교정 2] 기존의 틀(prod-X 클래스)은 그대로 보존하면서, 백엔드에서 들고 온 업로드 사진 경로(imageUrl)를 인라인 스타일 배경으로 완벽하게 결합 */}
-                        <div 
-                          className={`product-img-inner prod-${(idx % 6) + 1}`} 
-                          style={product.imageUrl ? { backgroundImage: `url(${product.imageUrl.startsWith('http') ? product.imageUrl : `http://localhost:8080${product.imageUrl}`})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
-                          role="img" 
-                          aria-label={product.name}
-                        ></div>
-                        {idx === 0 && <span className="product-tag">New</span>}
-                        {idx === 2 && <span className="product-tag">Best</span>}
-                      </div>
-                    </a>
-                    <p className="product-name">{product.name}</p>
-                    <p className="product-material">{product.description || 'Premium Fabric'}</p>
-                    <p className="product-price">₩ {(product.price || product.basePrice || 0).toLocaleString()}</p>
-                  </article>
-                ))
+                (() => {
+                  const filtered = products.filter(product => {
+                    if (product.isVisible === false || product.status === 'STOPPED') return false;
+
+                    if (activeCategory === '전체') return true;
+                    const prodCatId = product.categoryId || (product as any).category_id;
+                    if (prodCatId === undefined || prodCatId === null) return true;
+                    return prodCatId === CATEGORY_ID_MAP[activeCategory];
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-sub)', padding: '4rem 0', letterSpacing: '0.05em' }}>
+                        해당 카테고리에 등록된 신규 상품이 없습니다.
+                      </p>
+                    );
+                  }
+
+                  return filtered.map((product, idx) => (
+                    <article key={product.id} className={`product-card fade-in visible ${idx === 1 ? 'fade-in-delay-1' : idx === 2 ? 'fade-in-delay-2' : ''}`} role="listitem">
+                      <a href={`/product/${product.id}`} onClick={(e) => { e.preventDefault(); navigate(`/product/${product.id}`); }} aria-label={`${product.name} 상세 보기`}>
+                        <div className="product-img-wrap">
+                          <div 
+                            className={`product-img-inner prod-${(idx % 6) + 1}`} 
+                            style={product.imageUrl ? { backgroundImage: `url("${product.imageUrl.startsWith('http') ? product.imageUrl : `http://localhost:8080${product.imageUrl}`}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                            role="img" 
+                            aria-label={product.name}
+                          ></div>
+                          {idx === 0 && <span className="product-tag">New</span>}
+                          {idx === 2 && <span className="product-tag">Best</span>}
+                        </div>
+                      </a>
+                      <p className="product-name">{product.name}</p>
+                      <p className="product-material">{product.description || 'Premium Fabric'}</p>
+                      <p className="product-price">₩ {(product.price || product.basePrice || 0).toLocaleString()}</p>
+                    </article>
+                  ));
+                })()
               ) : (
                 <>
                   <article className="product-card fade-in" role="listitem">
@@ -452,7 +482,7 @@ const Main: React.FC = () => {
                 <details>
                   <summary>배송은 얼마나 걸리나요?</summary>
                   <p>
-                    국내 배송은 결제 확인 후 영업일 기준 2~3일 이내 출고됩니다.
+                    国内 배송은 결제 확인 후 영업일 기준 2~3일 이내 출고됩니다.
                     제주 및 도서산간 지역은 추가 2일이 소요될 수 있습니다.
                     주문 후 발송 알림 문자를 통해 배송 현황을 확인하실 수 있습니다.
                   </p>

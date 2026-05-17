@@ -1,0 +1,158 @@
+/* 🌟 크롬 강제 다크모드 플러그인 및 시스템 브라우저 반전 원천 차단 락 */
+.mypage-container,
+.mypage-container * {
+  color-scheme: light !important;
+  box-sizing: border-box;
+}
+
+.mypage-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 140px 20px 100px 20px;
+  background-color: #ffffff !important; /* 무조건 완전 화이트 고정 */
+  color: #111111 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+}
+
+.mypage-header {
+  margin-bottom: 40px;
+  border-bottom: 1px solid #111111 !important;
+  padding-bottom: 25px;
+}
+
+.welcome-tag {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: #8f8576 !important;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.mypage-header h1 {
+  font-size: 2rem;
+  font-weight: 400;
+  margin: 6px 0;
+  letter-spacing: -0.01em;
+  color: #111111 !important;
+}
+
+.mypage-header p {
+  font-size: 0.85rem;
+  color: #666666 !important;
+}
+
+.membership-summary-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 50px;
+}
+
+.member-card {
+  border: 1px solid #eeeeee !important;
+  padding: 24px;
+  background-color: #fafafa !important;
+}
+
+.member-card h4 {
+  margin: 0 0 10px 0;
+  font-size: 0.75rem;
+  color: #888888 !important;
+  letter-spacing: 0.05em;
+}
+
+.member-card .grade {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111111 !important;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.member-card .value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #111111 !important;
+  margin: 0;
+}
+
+.my-orders-section h2 {
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+  color: #111111 !important;
+}
+
+.orders-table-wrapper {
+  border-top: 2px solid #111111 !important;
+}
+
+.table-placeholder {
+  text-align: center;
+  padding: 60px 0;
+  color: #999999 !important;
+  font-size: 0.88rem;
+  border-bottom: 1px solid #eeeeee !important;
+  background-color: #ffffff !important;
+}
+
+.mypage-order-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  background-color: #ffffff !important;
+}
+
+.mypage-order-table th {
+  padding: 16px;
+  background-color: #f7f7f7 !important;
+  font-weight: 500;
+  border-bottom: 1px solid #eeeeee !important;
+  text-align: left;
+  color: #444444 !important;
+}
+
+.mypage-order-table td {
+  padding: 20px 16px;
+  border-bottom: 1px solid #eeeeee !important;
+  color: #333333 !important;
+}
+
+.order-num-text {
+  font-weight: 500;
+  color: #555555 !important;
+}
+
+.prod-title-cell {
+  font-weight: 400;
+  color: #111111 !important;
+}
+
+.price-bold {
+  font-weight: 600;
+  color: #111111 !important;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.status-badge.shipping {
+  background-color: #eef7ff !important;
+  color: #0066cc !important;
+}
+
+.status-badge.delivered {
+  background-color: #f0fdf4 !important;
+  color: #16a34a !important;
+}
+
+.status-badge.cancelled {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+}

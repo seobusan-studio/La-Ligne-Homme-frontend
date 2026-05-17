@@ -27,12 +27,18 @@ const AdminMain: React.FC = () => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
+  // 🌟 HTML5 드래그 앤 드롭 순서 변경을 위한 드래그 타겟 인덱스 추적 상태
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
   // 등록 폼 입력 상태 필드
   const [prodName, setProdName] = useState('');
   const [prodCategory, setProdCategory] = useState('아우터');
   const [prodPrice, setProdPrice] = useState('');
   const [prodStock, setProdStock] = useState('');
   const [prodDesc, setProdDesc] = useState('');
+
+  // 수정 모드 판별을 위한 수정 대상 상품 PK 기억 필드
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
 
   // 대시보드 실시간 정산 지표 상태
   const [stats, setStats] = useState({
@@ -84,12 +90,12 @@ const AdminMain: React.FC = () => {
     } catch (e) { console.log('뉴스레터 구독자 API 통신 대기 중...'); }
   };
 
-  // 🌟 무한 난사 대재앙 차단 인프라 보존
+  // 무한 난사 대재앙 차단 인프라 보존
   useEffect(() => {
     loadBackendData();
   }, [activeTab]);
 
-  // 실시간 주문 배송 상태 변경 처리 라우트
+  // 실시간 주문 배송 상태 변경 처리 라우트 (오리지널 보존)
   const handleOrderStatusChange = async (orderId: string, newStatus: string) => {
     try {
       const response = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/status`, {
@@ -108,7 +114,7 @@ const AdminMain: React.FC = () => {
     }
   };
 
-  // 실시간 회원 권한 조정 처리 라우트
+  // 실시간 회원 권한 조정 처리 라우트 (오리지널 보존)
   const handleUserRoleToggle = async (email: string, currentRole: string) => {
     const targetRole = currentRole === 'ADMIN' ? 'USER' : 'ADMIN';
     if (!window.confirm(`[${email}] 계정 권한을 ${targetRole}(으)로 변경하시겠습니까?`)) return;
@@ -130,13 +136,106 @@ const AdminMain: React.FC = () => {
     }
   };
 
-  // 다중 이미지 파일 일괄 처리 벨트
+  // 진열중 ↔ 보관함 실시간 토글 처리 핸들러 (오리지널 보존)
+  const handleProductToggle = async (id: number) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/products/${id}/toggle`, {
+        method: 'PATCH'
+      });
+      if (response.ok) {
+        loadBackendData();
+      } else {
+        alert('진열 상태 스위칭 실패');
+      }
+    } catch (e) {
+      alert('백엔드 서버 연동 실패');
+    }
+  };
+
+  // 상품 Soft Delete 삭제 처리 핸들러 (오리지널 보존)
+  const handleProductDelete = async (id: number) => {
+    if (!window.confirm('정말 이 상품을 삭제하시겠습니까? 데이터는 안전하게 보관함 처리(Soft Delete) 됩니다.')) return;
+    try {
+      const response = await fetch(`http://localhost:8080/api/products/${id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        alert('상품이 목록에서 성공적으로 안전 제거되었습니다.');
+        loadBackendData();
+      } else {
+        alert('삭제 프로세스 처리 실패');
+      }
+    } catch (e) {
+      alert('백엔드 서버 통신 실패');
+    }
+  };
+
+  // 🌟 [교정] 수정 진입 시 단건 썸네일뿐만 아니라 백엔드가 확장해서 넘겨준 '전체 이미지 목록(imageUrls)'을 통째로 복귀 바인딩합니다.
+  const handleProductEditStart = (prod: any) => {
+    setEditingProductId(prod.id);
+    setProdName(prod.name);
+    setProdDesc(prod.description || '');
+    setProdPrice(String(prod.price || prod.basePrice || prod.base_price || 0));
+    setProdStock(String(prod.totalStock || 0));
+    
+    const catName = Object.keys(CATEGORY_MAP).find(key => CATEGORY_MAP[key] === prod.categoryId) || '아우터';
+    setProdCategory(catName);
+    
+    if (prod.imageUrls && prod.imageUrls.length > 0) {
+      const fullUrls = prod.imageUrls.map((url: string) => 
+        url.startsWith('http') ? url : `http://localhost:8080${url}`
+      );
+      setImagePreviews(fullUrls);
+    } else if (prod.imageUrl) {
+      const fullUrl = prod.imageUrl.startsWith('http') ? prod.imageUrl : `http://localhost:8080${prod.imageUrl}`;
+      setImagePreviews([fullUrl]);
+    } else {
+      setImagePreviews([]);
+    }
+    setImageFiles([]); 
+    setProductViewMode('create');
+  };
+
+  // 🌟 [교정] 사진 추가 시 기존 배열을 다 밀어버리는 '덮어쓰기 완료' 버그를 격파하고 차곡차곡 쌓이도록 누적식 엔진으로 개조했습니다.
   const handleMultipleFiles = (files: File[]) => {
     const validImages = files.filter(file => file.type.startsWith('image/'));
     if (validImages.length === 0) return;
+
+    // 새 파일 객체 누적 적재
     setImageFiles(prev => [...prev, ...validImages]);
+    
+    // 새 파일 블롭 주소 생성 후 기존 미리보기 리스트 뒤에 차례대로 결합
     const newPreviews = validImages.map(file => URL.createObjectURL(file));
     setImagePreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  // 🎯 HTML5 드래그 스타트 이벤트 캡처 (오리지널 보존)
+  const onDragStartThumb = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  // 🎯 HTML5 드래그 오버 시 프리뷰 배열과 멀티파트 파일 배열 순서를 일치시켜 재정렬하는 핵심 셔플러 (오리지널 보존)
+  const onDragOverThumb = (e: React.DragEvent, index: number) => {
+    e.preventDefault(); 
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    const updatedPreviews = [...imagePreviews];
+    const [draggedPreviewItem] = updatedPreviews.splice(draggedIndex, 1);
+    updatedPreviews.splice(index, 0, draggedPreviewItem);
+    setImagePreviews(updatedPreviews);
+
+    if (imageFiles.length > 0) {
+      const updatedFiles = [...imageFiles];
+      const [draggedFileItem] = updatedFiles.splice(draggedIndex, 1);
+      updatedFiles.splice(index, 0, draggedFileItem);
+      setImageFiles(updatedFiles);
+    }
+
+    setDraggedIndex(index); 
+  };
+
+  const onDragEndThumb = () => {
+    setDraggedIndex(null);
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -162,13 +261,16 @@ const AdminMain: React.FC = () => {
   };
 
   const resetRegisterForm = () => {
-    imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    imagePreviews.forEach(url => {
+      if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+    });
     setImageFiles([]);
     setImagePreviews([]);
     setProdName('');
     setProdPrice('');
     setProdStock('');
     setProdDesc('');
+    setEditingProductId(null); 
     setProductViewMode('list');
   };
 
@@ -180,6 +282,11 @@ const AdminMain: React.FC = () => {
       return;
     }
 
+    // 🌟 [핵심 교정 추가] 최종 드래그 배치 정렬 완료 후 살아남은 기존 백엔드 정적 파일들의 순서 경로 추출
+    const remainingExistingImages = imagePreviews
+      .filter(url => !url.startsWith('blob:'))
+      .map(url => url.replace('http://localhost:8080', ''));
+
     const formData = new FormData();
     const productRequestDto = {
       categoryId: CATEGORY_MAP[prodCategory] || 1,
@@ -187,7 +294,10 @@ const AdminMain: React.FC = () => {
       description: prodDesc,
       basePrice: parseInt(prodPrice, 10),
       isVisible: true,
-      options: []
+      options: [
+        { size: 'FREE', color: '기본', extraPrice: 0, stockQuantity: parseInt(prodStock || '0', 10), isSellable: true }
+      ],
+      existingImages: remainingExistingImages // 🌟 [핵심] 재배치된 순서값을 DTO 명세에 실어 백엔드로 정밀 토스합니다!
     };
 
     formData.append(
@@ -195,24 +305,29 @@ const AdminMain: React.FC = () => {
       new Blob([JSON.stringify(productRequestDto)], { type: 'application/json' })
     );
 
+    // 드래그 정렬된 신규 파일 객체 순서 그대로 백엔드로 매핑 전송됩니다.
     imageFiles.forEach(file => {
       formData.append('images', file);
     });
 
     try {
-      const response = await fetch('http://localhost:8080/api/products', {
-        method: 'POST',
-        headers: { 'X-Admin-Id': '1' },
+      const apiUrl = editingProductId 
+        ? `http://localhost:8080/api/products/${editingProductId}`
+        : 'http://localhost:8080/api/products';
+        
+      const response = await fetch(apiUrl, {
+        method: editingProductId ? 'PUT' : 'POST',
+        headers: editingProductId ? {} : { 'X-Admin-Id': '1' },
         body: formData
       });
 
       const result = await response.json();
       if (response.ok && result.status !== 'ERROR') {
-        alert('스프링 부트 백엔드 본체 및 DB로 상품 등록 완료!');
+        alert(editingProductId ? '백엔드 본체 및 DB 상품 정보 수정 갱신 완료!' : '스프링 부트 백엔드 본체 및 DB로 상품 등록 완료!');
         resetRegisterForm();
         loadBackendData();
       } else {
-        alert(`등록 실패: ${result.message || '서버 명세 에러'}`);
+        alert(`처리 실패: ${result.message || '서버 명세 에러'}`);
       }
     } catch (err) {
       alert('서버 에러가 포착되었습니다.');
@@ -263,7 +378,6 @@ const AdminMain: React.FC = () => {
                     <tr key={order.id || order.orderId}>
                       <td>{order.id || order.orderId}</td>
                       <td>{order.customer || order.customerName || '비회원'}</td>
-                      {/* 🌟 [교정 완료] order.map 스코프에 맞춰 대시보드 주문 금액 표기 명세를 수정했습니다. */}
                       <td className="price-cell">₩ {(order.price || order.totalPrice || 0).toLocaleString()}</td>
                       <td>
                         <span className={`status-tag ${order.status === '배송완료' ? 'done' : 'ing'}`}>
@@ -284,10 +398,12 @@ const AdminMain: React.FC = () => {
           return (
             <div className="wide-register-panel">
               <header className="wide-panel-header">
-                <h2>새로운 컬렉션 상품 등록</h2>
+                <h2>{editingProductId ? '컬렉션 상품 정보 수정 편집기' : '새로운 컬렉션 상품 등록'}</h2>
                 <div className="wide-header-actions">
                   <button type="button" className="btn-admin-cancel" onClick={resetRegisterForm}>취소하고 돌아가기</button>
-                  <button type="button" className="btn-admin-submit" onClick={handleFormSubmit}>상품 게시하기</button>
+                  <button type="button" className="btn-admin-submit" onClick={handleFormSubmit}>
+                    {editingProductId ? '정보 수정하기' : '상품 게시하기'}
+                  </button>
                 </div>
               </header>
 
@@ -319,8 +435,17 @@ const AdminMain: React.FC = () => {
 
                   {imagePreviews.length > 0 && (
                     <div className="wide-thumbs-grid">
+                      {/* 🌟 [교정] 인덱스(idx) 대신 이미지 주소 고유값(url)을 고유 key로 매핑하여 리액트 가상돔의 드래그 정렬 상태를 완벽히 고정 보존합니다. */}
                       {imagePreviews.map((url, idx) => (
-                        <div key={idx} className={`wide-thumb-card ${idx === 0 ? 'main-active' : ''}`}>
+                        <div 
+                          key={url} 
+                          className={`wide-thumb-card ${idx === 0 ? 'main-active' : ''}`}
+                          draggable
+                          onDragStart={() => onDragStartThumb(idx)}
+                          onDragOver={(e) => onDragOverThumb(e, idx)}
+                          onDragEnd={onDragEndThumb}
+                          style={{ cursor: 'move', userSelect: 'none' }}
+                        >
                           <img src={url} alt={`슬라이드 ${idx}`} />
                           <span className="thumb-idx-indicator">{idx === 0 ? '대표' : `${idx + 1}`}</span>
                         </div>
@@ -383,21 +508,49 @@ const AdminMain: React.FC = () => {
               <thead>
                 <tr>
                   <th>ID</th>
+                  <th>이미지</th>
                   <th>상품명</th>
                   <th>기본가격</th>
-                  <th>상태</th>
+                  <th>창고 총재고</th>
+                  <th>진열 상태</th>
+                  <th>관리 제어</th>
                 </tr>
               </thead>
               <tbody>
                 {products.map(prod => (
                   <tr key={prod.id}>
                     <td>{prod.id}</td>
+                    <td>
+                      <div style={{
+                        width: '44px',
+                        height: '44px',
+                        backgroundImage: `url("${prod.imageUrl ? (prod.imageUrl.startsWith('http') ? prod.imageUrl : `http://localhost:8080${prod.imageUrl}`) : '/images/default-product.jpg'}")`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        borderRadius: '6px',
+                        border: '1px solid #333'
+                      }}></div>
+                    </td>
                     <td className="bold-cell">{prod.name}</td>
                     <td className="price-cell">₩ {(prod.basePrice || prod.price || prod.base_price || 0).toLocaleString()}</td>
-                    <td><span className="status-tag done">진열중</span></td>
+                    <td style={{ fontWeight: 500, color: '#bbb' }}>{prod.totalStock !== undefined ? `${prod.totalStock} 개` : '0 개'}</td>
+                    <td>
+                      <button 
+                        type="button"
+                        className={`status-tag ${prod.isVisible !== false ? 'done' : 'refund'}`}
+                        onClick={() => handleProductToggle(prod.id)}
+                        style={{ border: 'none', cursor: 'pointer', padding: '0.3rem 0.6rem', fontStyle: 'normal' }}
+                      >
+                        {prod.isVisible !== false ? '진열중' : '보관함'}
+                      </button>
+                    </td>
+                    <td>
+                      <button type="button" className="btn-table-sm" onClick={() => handleProductEditStart(prod)} style={{ marginRight: '6px', backgroundColor: '#222', borderColor: '#444' }}>수정</button>
+                      <button type="button" className="btn-table-sm" onClick={() => handleProductDelete(prod.id)} style={{ backgroundColor: '#5c1e1e', borderColor: '#7c2e2e', color: '#ffcccc' }}>삭제</button>
+                    </td>
                   </tr>
                 ))}
-                {products.length === 0 && <tr><td colSpan={4} style={{textAlign:'center', color:'#555'}}>DB에 등록된 상품이 없습니다.</td></tr>}
+                {products.length === 0 && <tr><td colSpan={7} style={{textAlign:'center', color:'#555'}}>DB에 등록된 상품이 없습니다.</td></tr>}
               </tbody>
             </table>
           </section>
