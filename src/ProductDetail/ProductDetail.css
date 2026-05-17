@@ -1,0 +1,310 @@
+/* src/ProductDetail/ProductDetail.css */
+.product-detail-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 150px 20px 100px 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", sans-serif;
+  color: #111;
+  background-color: #ffffff; /* 🌟 [대변신] 명품 편집샵 특유의 깨끗하고 정제된 화이트 배경 변경 */
+}
+
+.detail-navigation {
+  margin-bottom: 25px;
+  border-bottom: 1px solid #f1f1f1;
+  padding-bottom: 15px;
+}
+
+.nav-crumbs {
+  font-size: 0.78rem;
+  color: #888;
+  letter-spacing: 0.05em;
+  font-weight: 400;
+}
+
+.detail-main-wrapper {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr; /* 이미지 뷰어를 시원하게 확장 */
+  gap: 50px;
+}
+
+/* 왼쪽 미디어 박스 배열 (세로 썸네일 연동형 레이아웃) */
+.detail-media-box {
+  display: flex;
+  gap: 20px;
+}
+
+.sub-thumbnails-strip {
+  display: flex;
+  flex-direction: column; /* 하단 가로에서 좌측 세로 정렬 구조로 고도화 */
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.sub-thumb-card {
+  width: 72px;
+  height: 90px;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  border: 1px solid #eee;
+  transition: all 0.2s ease;
+  border-radius: 2px;
+}
+
+.sub-thumb-card:hover, .sub-thumb-card.active-border {
+  border-color: #111;
+  transform: translateY(-2px);
+}
+
+.main-viewer-card {
+  flex: 1;
+  padding-top: 125%; /* 4:5 정통 프리미엄 패션 비율 고착 */
+  position: relative;
+  background-color: #fafafa;
+  border: 1px solid #f5f5f5;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.main-viewer-img {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.5s ease;
+}
+
+/* 오른쪽 인포메이션 명세 카드 디자인 */
+.detail-info-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-brand-tag {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #8f8576;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.detail-product-title {
+  font-size: 1.75rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #222;
+  margin: 0 0 16px 0;
+  line-height: 1.3;
+}
+
+.detail-product-price {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #111;
+}
+
+.detail-divider {
+  height: 1px;
+  background-color: #eaeaea;
+  margin: 25px 0;
+}
+
+/* 정제된 쇼핑몰 안내 테이블 명세 구조 */
+.mall-delivery-guide-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guide-row {
+  display: flex;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.guide-label {
+  width: 100px;
+  color: #777;
+  font-weight: 400;
+}
+
+.guide-value {
+  color: #333;
+}
+
+/* 대형 셀렉트 박스 커스텀 */
+.detail-option-selector-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.detail-select-box {
+  width: 100%;
+  padding: 14px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  color: #111;
+  font-size: 0.88rem;
+  outline: none;
+  border-radius: 0; /* 시크한 스퀘어 엣지 처리 */
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.detail-select-box:focus {
+  border-color: #111;
+}
+
+/* 수량 제어 및 최종 정산 요약 보드 */
+.detail-quantity-counter-box {
+  margin-top: 20px;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border: 1px solid #eee;
+}
+
+.counter-row-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.selected-prod-name-badge {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #222;
+}
+
+.counter-btn-group {
+  display: flex;
+  border: 1px solid #ddd;
+  background-color: #fff;
+}
+
+.counter-btn-group button {
+  background: none;
+  border: none;
+  color: #333;
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.counter-btn-group button:hover {
+  background-color: #f1f1f1;
+}
+
+.counter-number-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  font-size: 0.9rem;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  color: #111;
+  font-weight: 500;
+}
+
+.live-total-price-board {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1px solid #eaeaea;
+  padding-top: 15px;
+}
+
+.total-label {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.total-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #111;
+}
+
+/* 🌟 쇼핑몰을 압도하는 웅장하고 각진 버튼 액션 그리드 */
+.detail-cta-action-buttons {
+  margin-top: 25px;
+  display: flex;
+  gap: 12px;
+}
+
+.btn-detail-primary {
+  flex: 1.6;
+  background-color: #111; /* 시크한 딥블랙 주입 */
+  color: #fff;
+  border: none;
+  padding: 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-detail-primary:hover {
+  background-color: #333;
+}
+
+.btn-detail-secondary {
+  flex: 1;
+  background-color: #fff;
+  color: #111;
+  border: 1px solid #111;
+  padding: 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-detail-secondary:hover {
+  background-color: #f9f9f9;
+}
+
+.btn-detail-soldout {
+  width: 100%;
+  background-color: #eee;
+  color: #999;
+  border: 1px solid #ddd;
+  padding: 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: not-allowed;
+}
+
+/* 하단 브랜드 상세 가이드 가사 명세 */
+.detail-description-area h4 {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: #111;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.detail-description-area p {
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: #555;
+  font-weight: 300;
+}
+
+.detail-loading, .detail-error {
+  text-align: center;
+  padding: 200px 20px;
+  color: #666;
+  background-color: #fff;
+  font-size: 0.95rem;
+}
