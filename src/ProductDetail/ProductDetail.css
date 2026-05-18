@@ -27,17 +27,19 @@
   gap: 50px;
 }
 
-/* 왼쪽 미디어 박스 배열 (세로 썸네일 연동형 레이아웃) */
+/* 왼쪽 미디어 박스 배열 (하단 가로 정렬 매핑 구조선 전격 교체) */
 .detail-media-box {
   display: flex;
+  flex-direction: column; /* 🌟 [교정] 메인 이미지 하단으로 썸네일 벨트가 내려가도록 축 방향 교체 */
   gap: 20px;
 }
 
 .sub-thumbnails-strip {
   display: flex;
-  flex-direction: column; /* 하단 가로에서 좌측 세로 정렬 구조로 고도화 */
+  flex-direction: row; /* 🌟 [교정] 좌측 세로에서 하단 가로 정렬 구조로 리밸런싱 완료 */
   gap: 10px;
   flex-shrink: 0;
+  overflow-x: auto; /* 복수 이미지 등록 시 화면을 깨뜨리지 않고 부드럽게 슬라이딩 스크롤 방어 */
 }
 
 .sub-thumb-card {
@@ -69,7 +71,8 @@
 .main-viewer-img {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-size: cover;
+  background-size: contain; /* 🌟 [교정] 원본 의류 실루엣 비율이 양옆으로 사정없이 잘리는 버그 원천 차단 */
+  background-repeat: no-repeat; /*contain 분기 시 잔상 복사 현상 방어 */
   background-position: center;
   transition: transform 0.5s ease;
 }

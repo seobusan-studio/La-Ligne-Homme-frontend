@@ -32,8 +32,9 @@ const Cart: React.FC = () => {
   // 개별 체크박스 토글 핸들러
   const handleCheckboxToggle = (productId: number, size: string) => {
     const targetKey = `${productId}_${size}`;
+    const isChecked = checkedKeys.includes(targetKey);
     setCheckedKeys(prev => 
-      prev.includes(targetKey) 
+      isChecked 
         ? prev.filter(key => key !== targetKey) 
         : [...prev, targetKey]
     );
@@ -106,6 +107,47 @@ const Cart: React.FC = () => {
 
   return (
     <div className="cart-page-container">
+      
+      {/* 🌟 [신설] 하이엔드 무드의 메인 홈 이동 액션 바 그리드 개통 */}
+      <div className="cart-top-action-bar" style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '20px',
+        paddingBottom: '10px',
+        borderBottom: '1px solid #1a1a1a'
+      }}>
+        {/* ◀ CONTINUE SHOPPING (메인 홈화면 복귀 단추) */}
+        <div 
+          onClick={() => navigate('/')} 
+          style={{ 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            fontSize: '11px', 
+            letterSpacing: '0.12em', 
+            color: '#8f8576', 
+            cursor: 'pointer',
+            fontWeight: '600',
+            transition: 'color 0.2s, transform 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#fff';
+            e.currentTarget.style.transform = 'translateX(-3px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#8f8576';
+            e.currentTarget.style.transform = 'translateX(0px)';
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          CONTINUE SHOPPING (메인 홈으로)
+        </div>
+      </div>
+
       <header className="cart-header">
         <h1>SHOPPING BAG</h1>
         <p>선택하신 정제된 실루엣의 컬렉션 예약 보관함입니다.</p>
@@ -152,7 +194,8 @@ const Cart: React.FC = () => {
                   <div className="cart-item-details">
                     <span className="cart-item-brand">{item.brandName}</span>
                     <h3>{item.name}</h3>
-                    <p className="cart-item-option">선택 옵션: SIZE {item.size}</p>
+                    {/* 🌟 [교정] SIZE 옵션 옆에 유저가 선택한 색상(COLOR) 명세까지 실시간 유기적 결합 표출 */}
+                    <p className="cart-item-option">선택 옵션: SIZE {item.size} / COLOR {item.color || '기본'}</p>
                     <span className="cart-item-price">₩{item.price.toLocaleString()}</span>
                   </div>
                   <div className="cart-item-actions">
