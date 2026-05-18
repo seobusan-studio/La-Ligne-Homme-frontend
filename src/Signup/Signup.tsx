@@ -11,6 +11,11 @@ const Signup: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  
+  // 🌟 [수혈] 검색된 우편번호+도로명 주소용 상태창과 상세주소(동, 호수)용 상태창 분할 적재
+  const [address, setAddress] = useState('');
+  const [detailAddress, setDetailAddress] = useState('');
+  
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
 
@@ -19,6 +24,7 @@ const Signup: React.FC = () => {
     lastName: false,
     firstName: false,
     email: false,
+    address: false, 
     password: false,
     passwordConfirm: false,
     agree: false
@@ -35,6 +41,17 @@ const Signup: React.FC = () => {
   const [agreeMarketing, setAgreeMarketing] = useState(false);
 
   const isAllAgreed = agreeTerms && agreePrivacy && agreeMarketing;
+
+  // 🌟 [신설 - Daum 우편번호 고속 트래킹 원장 스크립트 동적 주입]
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    script.async = true;
+    document.head.appendChild(script);
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
 
   // 이미 로그인되어 있으면 홈으로
   useEffect(() => {
@@ -83,14 +100,52 @@ const Signup: React.FC = () => {
     }));
   };
 
+  /* =========================================================================
+   * 🌟 [신설 - 카카오 카운터 파트 전용 우편번호 오버레이 엔진]
+   * 사용자가 주소 검색 버튼을 누르면 팝업창을 띄우고 우편번호와 도로명 주소를 정밀 조합해 냅니다.
+   * ========================================================================= */
+  const handleOpenPostcode = () => {
+    if ((window as any).daum && (window as any).daum.Postcode) {
+      new (window as any).daum.Postcode({
+        oncomplete: (data: any) => {
+          let fullRoadAddr = data.roadAddress; // 도로명 주소 기본 패킷 변수
+          let extraRoadAddr = ''; // 참고 항목 변수
+
+          // 법정동명이 있을 경우 추가 (법정리는 제외)
+          if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) {
+            extraRoadAddr += data.bname;
+          }
+          // 건물명이 있고, 공동주택일 경우 추가
+          if (data.buildingName !== '' && data.apartment === 'Y') {
+            extraRoadAddr += (extraRoadAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+          }
+          // 표시할 참고항목이 있을 경우 최종 조립
+          if (extraRoadAddr !== '') {
+            extraRoadAddr = ` (${extraRoadAddr})`;
+          }
+
+          // 형님의 결제창 인터페이스 규격에 부합하도록 [우편번호] 도로명주소 포맷 1차 적재
+          setAddress(`[${data.zonecode}] ${fullRoadAddr}${extraRoadAddr}`);
+          
+          // 주소 꼽히면 자동으로 상세주소 칸으로 마우스 포커스 전진 배치
+          const detailInput = document.getElementById('detail-address');
+          if (detailInput) detailInput.focus();
+        }
+      }).open();
+    } else {
+      alert('우편번호 서비스 스크립트를 로딩 중입니다. 잠시만 기다려 주십시오.');
+    }
+  };
+
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const isEmailValid = email && email.includes('@');
     const isPwValid = password.length >= 8;
     const isPwMatch = password === passwordConfirm;
-    
-    // 🌟 필수 약관 동의 검증 스위치 (이용약관 및 개인정보 둘 다 true 일 때만 통과)
+    const isAddressValid = address.trim().length > 0; // 주소 선택 검증선
+
+    // 필수 약관 동의 검증 스위치
     const isAgreeValid = agreeTerms && agreePrivacy;
 
     // 에러 상태 업데이트
@@ -98,23 +153,26 @@ const Signup: React.FC = () => {
       lastName: !lastName.trim(),
       firstName: !firstName.trim(),
       email: !isEmailValid,
+      address: !isAddressValid, 
       password: !isPwValid,
       passwordConfirm: !isPwMatch,
-      agree: !isAgreeValid // 🌟 약관 미동의 시 true로 켜짐
+      agree: !isAgreeValid 
     });
 
-    // 🌟 [수정 포인트 - 최종 수문장 IF문]
-    // 마지막 조건식에 !isAgreeValid(필수약관 미동의)가 누락되어 있어서 그냥 패스되었던 문제를 완벽 교정했습니다.
-    if (!lastName.trim() || !firstName.trim() || !isEmailValid || !isPwValid || !isPwMatch || !isAgreeValid) {
-      return; // 🌟 필수 조건이 충족되지 않으면 여기서 코드가 가차 없이 종료되어 fetch를 실행하지 않습니다.
+    if (!lastName.trim() || !firstName.trim() || !isEmailValid || !isAddressValid || !isPwValid || !isPwMatch || !isAgreeValid) {
+      return; 
     }
 
     try {
+      // 🌟 [조립 완료] 우편번호 주소와 상세 기입 주소를 공백 하나 두고 병합하여 백엔드로 단일 사출 처리
+      const combinedAddress = `${address.trim()} ${detailAddress.trim()}`.trim();
+
       const payload = {
         email: email.trim(),
         password,
         name: lastName.trim() + firstName.trim(), 
         phone: phone.replace(/\D/g, ''),
+        address: combinedAddress, 
         isAgreedTerms: agreeTerms,         
         isAgreedPrivacy: agreePrivacy,     
         isAgreedMarketing: agreeMarketing  
@@ -128,13 +186,13 @@ const Signup: React.FC = () => {
 
       const result = await response.json();
 
-      if (response.ok && result.success) {
+      if (response.ok && (result.status === 'SUCCESS' || result.success)) {
         setIsSuccess(true);
       } else {
-        alert(`회원가입 실패: ${result.message || '알 수 없는 오류'}`);
+        alert(result.message || '회원가입 처리 중 알 수 없는 오류가 발생했습니다.');
       }
     } catch (err) {
-      alert('백엔드 서버와 통신할 수 없습니다.');
+      alert('라 린느 인증 백엔드 서버와 통신할 수 없습니다.');
     }
   };
 
@@ -173,7 +231,7 @@ const Signup: React.FC = () => {
             <div id="form-section">
               <div className="form-header">
                 <p className="form-eyebrow">Create Account</p>
-                <h1 className="form-title">회원가입</h1>
+                <h2 className="form-title">회원가입</h2>
                 <p className="form-subtitle">이미 계정이 있으신가요? <span onClick={() => navigate('/login')} style={{ color: 'var(--color-gold)', cursor: 'pointer' }}>로그인</span></p>
               </div>
 
@@ -206,11 +264,57 @@ const Signup: React.FC = () => {
                   <span className="field-hint">숫자만 입력하시면 자동으로 하이픈이 추가됩니다.</span>
                 </div>
 
+                {/* 🌟 [UX 교정 개통] 우편번호 서비스와 결합된 기본 배송지 주소 구역 */}
+                <div className="field">
+                  <label htmlFor="address">기본 배송지 주소 <span className="required" aria-hidden="true">*</span></label>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input 
+                      type="text" 
+                      id="address" 
+                      value={address} 
+                      readOnly // 키보드로 임의 타자 주작 버그 차단
+                      onClick={handleOpenPostcode} // 주소창 클릭해도 바로 팝업 개통
+                      className={errors.address ? 'error' : address ? 'valid' : ''} 
+                      placeholder="주소 검색 버튼을 눌러주세요" 
+                      required 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={handleOpenPostcode} 
+                      style={{ 
+                        background: '#111', 
+                        color: '#fff', 
+                        border: '1px solid #8f8576', 
+                        padding: '0 16px', 
+                        fontSize: '12px', 
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        letterSpacing: '0.05em'
+                      }}
+                    >
+                      주소 검색
+                    </button>
+                  </div>
+                  
+                  {/* 상세주소 입력 보드 (동, 호수 세부 명세용) */}
+                  <input 
+                    type="text" 
+                    id="detail-address" 
+                    value={detailAddress} 
+                    onChange={e => setDetailAddress(e.target.value)}
+                    placeholder="상세 주소를 입력하세요 (아파트 동·호수 등)" 
+                    style={{ width: '100%' }}
+                  />
+                  <span className={`field-error ${errors.address ? 'visible' : ''}`} role="alert">배송지 주소를 입력해 주세요.</span>
+                </div>
+
                 {/* 비밀번호 */}
                 <div className="field">
                   <label htmlFor="password">비밀번호 <span className="required" aria-hidden="true">*</span></label>
                   <div className="password-wrap">
                     <input type={showPassword ? 'text' : 'password'} id="password" value={password} onChange={e => setPassword(e.target.value)} onBlur={e => handleBlur('password', e.target.value)} className={errors.password ? 'error' : (password.length >= 8 ? 'valid' : '')} placeholder="8자 이상 입력하세요" required />
+                    <input type="checkbox" style={{display: 'none'}} id="toggle-pw-chk" />
                     <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}>{showPassword ? '숨김' : '표시'}</button>
                   </div>
                   <div className="strength-bar" aria-hidden="true">
@@ -227,6 +331,7 @@ const Signup: React.FC = () => {
                   <label htmlFor="password-confirm">비밀번호 확인 <span className="required" aria-hidden="true">*</span></label>
                   <div className="password-wrap">
                     <input type={showPasswordConfirm ? 'text' : 'password'} id="password-confirm" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} onBlur={e => handleBlur('passwordConfirm', e.target.value)} className={errors.passwordConfirm ? 'error' : (passwordConfirm && passwordConfirm === password ? 'valid' : '')} placeholder="비밀번호를 다시 입력하세요" required />
+                    <input type="checkbox" style={{display: 'none'}} id="toggle-pw-confirm-chk" />
                     <button type="button" className="password-toggle" onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}>{showPasswordConfirm ? '숨김' : '표시'}</button>
                   </div>
                   <span className={`field-error ${errors.passwordConfirm ? 'visible' : ''}`} role="alert">비밀번호가 일치하지 않습니다.</span>
@@ -252,7 +357,6 @@ const Signup: React.FC = () => {
                   </label>
                 </div>
 
-                {/* 🌟 기존 에러 안내 마크업 출력 스위치 연동 */}
                 <p className={`field-error ${errors.agree ? 'visible' : ''}`} role="alert" style={{ marginBottom: '0.75rem' }}>필수 약관에 동의해 주세요.</p>
 
                 <button type="submit" className="btn-submit">가입 완료하기</button>
@@ -268,7 +372,6 @@ const Signup: React.FC = () => {
               <h2 className="success-title">가입을 환영합니다</h2>
               <p className="success-desc">
                 라 린느 옴므의 멤버가 되셨습니다.<br />
-                첫 구매 10% 할인 쿠폰이 이메일로 발송되었습니다.
               </p>
               <span onClick={() => navigate('/')} className="btn-to-home" style={{ cursor: 'pointer' }}>쇼핑 시작하기</span>
             </div>

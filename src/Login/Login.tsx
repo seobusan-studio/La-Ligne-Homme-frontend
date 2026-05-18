@@ -63,14 +63,22 @@ const Login: React.FC = () => {
       if (response.ok && (result.success || result.data)) {
         const SESSION_KEY = 'laligne_session';
         
-        // 🌟 핵심 수정: result.user가 아니라 백엔드가 보낸 통짜 데이터 객체(result.data)를 바라보게 변경
+        // 백엔드가 보낸 통짜 데이터 객체(result.data) 매핑 사수
         const userData = result.data; 
 
-        // 세션 데이터에 이메일, 이름과 함께 백엔드가 넘겨주는 role까지 안전하게 동착
+        /* =========================================================================
+         * 🚨 [최종 교정 구역 - 브라우저 세션 적재 누락 가드 개통]
+         * 기존의 email, name, role 명세는 완벽히 사수하면서, 백엔드로부터 넘어온 
+         * 진본 주소(address)와 연락처(phone), 회원 식별 PK(id)까지 세션 보관소에 함께 
+         * 압착 영속화하여 결제창 자동 완성망으로 고속 우회 수혈시킵니다.
+         * ========================================================================= */
         const sessionData = JSON.stringify({ 
+          id: userData.id,
           email: userData.email, 
           name: userData.name,
-          role: userData.role // 👈 세션에 ADMIN / USER 분기용 데이터가 정상적으로 저장됩니다.
+          role: userData.role,
+          phone: userData.phone,     // 🌟 [최종 수혈] 세션 락다운 방지용 연락처 꼽기!
+          address: userData.address   // 🌟 [최종 수혈] 세션 락다운 방지용 주소 꼽기!
         });
         
         if (rememberMe) localStorage.setItem(SESSION_KEY, sessionData);
@@ -135,7 +143,7 @@ const Login: React.FC = () => {
           </div>
 
           <form id="login-form" onSubmit={handleLoginSubmit} noValidate>
-            <div className={`auth-error ${authError ? 'visible' : ''}`} id="auth-error" role="alert">
+            <div className="auth-error" id="auth-error" role="alert" style={{ display: authError ? 'block' : 'none' }}>
               이메일 또는 비밀번호가 올바르지 않습니다.
             </div>
 

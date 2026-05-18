@@ -16,7 +16,7 @@ interface Product {
   isVisible?: boolean;  // 어드민 진열 여부(true, false) 연동을 위한 명세 확장
 }
 
-// 한글 카테고리 버튼 이름과 백엔드 DB 고유 ID를 바인딩하기 위한 매핑 사전 구축
+// 한글 카테고리 버튼 이름과 백엔드 DB 고유 ID를 바인딩하기 위한 매핑 사전 구축 (폴백용 유지)
 const CATEGORY_ID_MAP: Record<string, number> = {
   '아우터': 1,
   '티셔츠 / 셔츠': 2,
@@ -36,15 +36,28 @@ const Main: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState('전체');
   const [newsletterPlaceholder, setNewsletterPlaceholder] = useState('이메일 주소를 입력하세요');
 
+  // 🌟 [신설 핵심 상태] 백엔드 DB에서 실시간으로 긁어올 동적 카테고리 수혈단
+  const [categories, setCategories] = useState<any[]>([]);
+
   const formRef = useRef<HTMLFormElement>(null);
 
-  // 1. 로그인 세션 및 상품 데이터 로드 (오리지널 보존)
+  // 1. 로그인 세션 및 상품 데이터 로드 + 동적 카테고리 실시간 동기화
   useEffect(() => {
     const SESSION_KEY = 'laligne_session';
     const sessionRaw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
     if (sessionRaw) {
       setUser(JSON.parse(sessionRaw));
     }
+
+    // 🌟 [신설] 백엔드 DB 카테고리 테이블 정보 로드 파이프라인
+    fetch('http://localhost:8080/api/categories')
+      .then(res => res.json())
+      .then(result => {
+        if (result.data) {
+          setCategories(result.data);
+        }
+      })
+      .catch(err => console.error('동적 카테고리 통신 대기 중...', err));
 
     fetch('http://localhost:8080/api/products')
       .then(res => res.json())
@@ -88,7 +101,7 @@ const Main: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
       io.disconnect();
     };
-  }, [products, activeCategory]); // 탭이 변경되어 리스트가 교체될 때도 fade-in 애니메이션 상시 작동
+  }, [products, activeCategory, categories]); // 🌟 카테고리 원장 변경 시에도 동기화 작동
 
   const handleLogout = () => {
     const SESSION_KEY = 'laligne_session';
@@ -119,6 +132,11 @@ const Main: React.FC = () => {
       element.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  // 🌟 [순수 확장 헬퍼] DB에서 받은 카테고리가 있으면 동적으로 탭바 라인업 구성, 없으면 고정 배열로 리턴하는 가드 코드
+  const dynamicCategoryTabs = categories.length > 0 
+    ? ['전체', ...categories.map((c: any) => c.name)]
+    : ['전체', '아우터', '티셔츠 / 셔츠', '가디건 / 니트', '팬츠'];
 
   return (
     <div className="main-page-box">
@@ -152,7 +170,6 @@ const Main: React.FC = () => {
           <div className="nav-right" id="nav-right">
             {!user ? (
               <>
-                {/* 🌟 [교정 추가] 비회원 상태일 때도 장바구니 이용 및 자신이 산 주문 조회가 가능하도록 정문 오픈! */}
                 <button onClick={() => navigate('/cart')} className="btn-header desktop-only" id="btn-cart" style={{ marginRight: '0.35rem' }}>장바구니</button>
                 <button onClick={() => navigate('/guest-lookup')} className="btn-header desktop-only" id="btn-guest-lookup" style={{ marginRight: '0.35rem' }}>비회원 주문조회</button>
                 <button onClick={() => navigate('/login')} className="btn-header desktop-only" id="btn-login">로그인</button>
@@ -164,7 +181,6 @@ const Main: React.FC = () => {
                   {user.name}님
                 </span>
                 
-                {/* 최고 관리자(ADMIN)가 아닐 때만 장바구니와 마이페이지 런타임 버튼이 출현하도록 완벽 제어벽 가동! */}
                 {user.role !== 'ADMIN' && (
                   <>
                     <button onClick={() => navigate('/cart')} className="btn-header desktop-only" id="btn-cart" style={{ marginRight: '0.35rem' }}>장바구니</button>
@@ -176,7 +192,6 @@ const Main: React.FC = () => {
               </>
             )}
 
-            {/* 관리자 권한 여부에 따른 우측 메인 버튼 조건부 렌더링 */}
             {user?.role === 'ADMIN' && (
               <button 
                 onClick={() => navigate('/admin')} 
@@ -264,7 +279,8 @@ const Main: React.FC = () => {
             </div>
 
             <nav className="category-nav fade-in" aria-label="상품 카테고리">
-              {['전체', '아우터', '티셔츠 / 셔츠', '가디건 / 니트', '팬츠'].map(cat => (
+              {/* 🌟 [동적 교정] 하드코딩 리스트를 지우고 실시간 생성된 dynamicCategoryTabs 배열로 토글 스위치 렌더링 */}
+              {dynamicCategoryTabs.map(cat => (
                 <button 
                   key={cat}
                   className={`cat-btn ${activeCategory === cat ? 'active' : ''}`}
@@ -285,7 +301,12 @@ const Main: React.FC = () => {
                     if (activeCategory === '전체') return true;
                     const prodCatId = product.categoryId || (product as any).category_id;
                     if (prodCatId === undefined || prodCatId === null) return true;
-                    return prodCatId === CATEGORY_ID_MAP[activeCategory];
+                    
+                    // 🌟 [동적 필터링 교정] DB 카테고리 데이터에 매칭되는 행이 있는지 파악하여 연격 교차 필터링
+                    const matchedCat = categories.find(c => c.name === activeCategory);
+                    const targetId = matchedCat ? matchedCat.id : CATEGORY_ID_MAP[activeCategory];
+                    
+                    return prodCatId === targetId;
                   });
 
                   if (filtered.length === 0) {
