@@ -173,6 +173,17 @@ const Checkout: React.FC = () => {
       const result = await response.json();
       if (response.ok && result.status !== 'ERROR') {
         alert('🎉 주문 승인 및 결제가 성공적으로 처리 완료되었습니다.');
+
+        const successData = {
+          orderNumber: result.data.orderNumber, 
+          totalAmount: totalAmount,
+          paymentMethod: paymentMethod,
+          bankInfo: paymentMethod === '무통장입금' ? {
+            bankName: '국민은행',
+            accountNumber: '473801-04-176193',
+            depositor: '제니스'
+          } : null
+        };
         
         const userIdentifier = session ? (session.name || session.id || 'user') : 'guest';
         const dynamicCartKey = `laligne_cart_${userIdentifier}`;
@@ -183,12 +194,7 @@ const Checkout: React.FC = () => {
         );
         localStorage.setItem(dynamicCartKey, JSON.stringify(remainingCart));
 
-        if (isLoggedIn) {
-          navigate('/mypage');
-        } else {
-          alert(`비회원 주문번호 조회를 위해 홈화면으로 이동합니다.\n설정하신 비밀번호를 꼭 기억해 주세요!`);
-          navigate('/');
-        }
+        navigate('/payment-complete', { state: successData });
       } else {
         alert(`결제 실패: ${result.message || '창고 재고 수량 초과'}`);
       }

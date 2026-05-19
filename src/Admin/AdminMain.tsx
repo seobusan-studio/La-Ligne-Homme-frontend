@@ -65,6 +65,7 @@ const AdminMain: React.FC = () => {
     totalRefund: 0,
     netProfit: 0,
     orderCount: 0,
+    dailySales: {}
   });
 
   // 현재 어떤 주문 번호의 상세 내역이 펼쳐져 있는지 기억하는 상태창
@@ -95,12 +96,29 @@ const AdminMain: React.FC = () => {
     } catch (e) { console.log('동적 카테고리 원장 통신 대기 중...'); }
 
     try {
-      const resStats = await fetch('http://localhost:8080/api/order/admin/settlement');
-      const resultStats = await resStats.json();
-      if (resultStats.status === 'SUCCESS' && resultStats.data) {
-        setStats(resultStats.data);
+      const response = await fetch('http://localhost:8080/api/order/admin/settlement');
+      
+      // 🌟 [강력한 가드] 상태 코드가 403(권한없음)인 경우를 별도로 잡아냅니다.
+      if (response.status === 403) {
+        console.error("🚨 403 에러 발생: 관리자 권한이 없습니다. 서버의 인터셉터를 확인하십시오.");
+        return; // 여기서 멈추고 서버의 '권한 체크 로직'을 의심해야 합니다.
       }
-    } catch (e) { console.log('정산 통계 통신 대기 중...'); }
+
+      const resultStats = await response.json();
+      
+      if (resultStats && resultStats.data) {
+        setStats({
+          totalSales: resultStats.data.totalSales ?? 0,
+          totalRefund: resultStats.data.totalRefund ?? 0,
+          netProfit: (resultStats.data.totalSales ?? 0) - (resultStats.data.totalRefund ?? 0),
+          orderCount: resultStats.data.orderCount ?? 0,
+          dailySales: resultStats.data.dailySales ?? {}
+        });
+        console.log("✅ 정산 데이터 로드 성공:", resultStats.data);
+      }
+    } catch (e) { 
+      console.log('❌ 정산 통계 API 호출 실패 (서버 주소나 CORS 문제 확인):', e); 
+    }
 
     try {
       const resProd = await fetch('http://localhost:8080/api/products');
@@ -167,6 +185,7 @@ const AdminMain: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log("⚡ [디버그] loadBackendData 호출 시도!");
     loadBackendData();
 
     const dynamicScheduler = setInterval(() => {
@@ -174,7 +193,7 @@ const AdminMain: React.FC = () => {
     }, 3000);
 
     return () => clearInterval(dynamicScheduler);
-  }, [activeTab]);
+  }, []);
 
   const handleCreateCategory = async () => {
     if (!newCatName) return alert('카테고리 이름을 명시해 주십시오.');
@@ -535,22 +554,22 @@ const AdminMain: React.FC = () => {
             <section className="stats-grid">
               <div className="stats-card">
                 <h3>총 매출액</h3>
-                <p className="card-value">₩ {stats.totalSales.toLocaleString()}</p>
+                <p className="card-value">₩ {(stats.totalSales ?? 0).toLocaleString()}</p>
                 <span className="card-badge sales">결제 완료 기준</span>
               </div>
               <div className="stats-card">
                 <h3>총 환불액</h3>
-                <p className="card-value refund">₩ {stats.totalRefund.toLocaleString()}</p>
+                <p className="card-value refund">₩ {(stats.totalRefund ?? 0).toLocaleString()}</p>
                 <span className="card-badge refund">취소 완료 기준</span>
               </div>
               <div className="stats-card Highlands">
                 <h3>당기 순이익</h3>
-                <p className="card-value profit">₩ {stats.netProfit.toLocaleString()}</p>
+                <p className="card-value profit">₩ {(stats.netProfit ?? 0).toLocaleString()}</p>
                 <span className="card-badge profit">매출 - 환불</span>
               </div>
               <div className="stats-card">
                 <h3>주문 건수</h3>
-                <p className="card-value">{stats.orderCount} 건</p>
+                <p className="card-value">{stats.orderCount ?? 0} 건</p>
                 <span className="card-badge count">실결제 기준</span>
               </div>
             </section>
@@ -1154,15 +1173,15 @@ const AdminMain: React.FC = () => {
             <div className="stats-grid" style={{ marginBottom: '30px' }}>
               <div className="stats-card">
                 <h3>총 매출액</h3>
-                <p className="card-value">₩ {stats.totalSales.toLocaleString()}</p>
+                <p className="card-value">₩ {(stats.totalSales ?? 0).toLocaleString()}</p>
               </div>
               <div className="stats-card">
                 <h3>총 환불액</h3>
-                <p className="card-value refund">₩ {stats.totalRefund.toLocaleString()}</p>
+                <p className="card-value refund">₩ {(stats.totalRefund ?? 0).toLocaleString()}</p>
               </div>
               <div className="stats-card">
                 <h3>당기 순이익</h3>
-                <p className="card-value profit">₩ {stats.netProfit.toLocaleString()}</p>
+                <p className="card-value profit">₩ {(stats.netProfit ?? 0).toLocaleString()}</p>
               </div>
             </div>
             

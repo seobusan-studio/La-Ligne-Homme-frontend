@@ -1,0 +1,5 @@
+.complete-container { max-width: 600px; margin: 150px auto; padding: 20px; text-align: center; }
+.complete-card { border: 1px solid #eee; padding: 30px; margin: 30px 0; background: #fcfcfc; }
+.complete-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; }
+.bank-info-box { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; color: #8f8576; }
+.btn-home { margin-top: 20px; padding: 15px 30px; background: #111; color: #fff; cursor: pointer; border: none; }
