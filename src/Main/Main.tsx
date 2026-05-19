@@ -317,7 +317,8 @@ const Main: React.FC = () => {
                     );
                   }
 
-                  return filtered.map((product, idx) => (
+                  // 🌟 [교정] 각 카테고리별 최대 6개만 표출되도록 상한 가드 레일 제한 채결 (.slice)
+                  return filtered.slice(0, 6).map((product, idx) => (
                     <article key={product.id} className={`product-card fade-in visible ${idx === 1 ? 'fade-in-delay-1' : idx === 2 ? 'fade-in-delay-2' : ''}`} role="listitem">
                       <a href={`/product/${product.id}`} onClick={(e) => { e.preventDefault(); navigate(`/product/${product.id}`); }} aria-label={`${product.name} 상세 보기`}>
                         <div className="product-img-wrap">
@@ -332,7 +333,7 @@ const Main: React.FC = () => {
                         </div>
                       </a>
                       <p className="product-name">{product.name}</p>
-                      <p className="product-material">{product.description || 'Premium Fabric'}</p>
+                      {/* 🌟 [요구사항 반영] 설명글(product-material) 엘리먼트 라인 완전 제거 완료 */}
                       <p className="product-price">₩ {(product.price || product.basePrice || 0).toLocaleString()}</p>
                     </article>
                   ));
@@ -347,7 +348,7 @@ const Main: React.FC = () => {
                       </div>
                     </a>
                     <p className="product-name">미니멀 울 코트</p>
-                    <p className="product-material">Italian Wool · Ivory</p>
+                    {/* 🌟 [폴백 레이아웃 교정] 설명글 라인 제거 */}
                     <p className="product-price">₩ 498,000</p>
                   </article>
                   <article className="product-card fade-in fade-in-delay-1" role="listitem">
@@ -357,7 +358,7 @@ const Main: React.FC = () => {
                       </div>
                     </a>
                     <p className="product-name">슬림 테일러드 재킷</p>
-                    <p className="product-material">Wool Blend · Charcoal</p>
+                    {/* 🌟 [폴백 레이아웃 교정] 설명글 라인 제거 */}
                     <p className="product-price">₩ 368,000</p>
                   </article>
                   <article className="product-card fade-in fade-in-delay-2" role="listitem">
@@ -368,7 +369,7 @@ const Main: React.FC = () => {
                       </div>
                     </a>
                     <p className="product-name">드레이프 셔츠</p>
-                    <p className="product-material">Cotton Modal · Sand</p>
+                    {/* 🌟 [폴백 레이아웃 교정] 설명글 라인 제거 */}
                     <p className="product-price">₩ 148,000</p>
                   </article>
                   <article className="product-card fade-in" role="listitem">
@@ -378,7 +379,7 @@ const Main: React.FC = () => {
                       </div>
                     </a>
                     <p className="product-name">와이드 팬츠</p>
-                    <p className="product-material">Technical Twill · Black</p>
+                    {/* 🌟 [폴백 레이아웃 교정] 설명글 라인 제거 */}
                     <p className="product-price">₩ 218,000</p>
                   </article>
                   <article className="product-card fade-in fade-in-delay-1" role="listitem">
@@ -388,7 +389,7 @@ const Main: React.FC = () => {
                       </div>
                     </a>
                     <p className="product-name">리넨 블레이저</p>
-                    <p className="product-material">Pure Linen · Dove Grey</p>
+                    {/* 🌟 [폴백 레이아웃 교정] 설명글 라인 제거 */}
                     <p className="product-price">₩ 298,000</p>
                   </article>
                   <article className="product-card fade-in fade-in-delay-2" role="listitem">
@@ -399,7 +400,7 @@ const Main: React.FC = () => {
                       </div>
                     </a>
                     <p className="product-name">크루넥 니트</p>
-                    <p className="product-material">Merino Wool · Oatmeal</p>
+                    {/* 🌟 [폴백 레이아웃 교정] 설명글 라인 제거 */}
                     <p className="product-price">₩ 198,000</p>
                   </article>
                 </>
