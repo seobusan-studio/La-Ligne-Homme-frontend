@@ -9,6 +9,19 @@ const GuestOrderLookup: React.FC = () => {
   const [orderData, setOrderData] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // 🌟 상태값 한글 변환 엔진
+  const getStatusKr = (status: string) => {
+    switch(status) {
+      case 'PENDING': return '주문접수';
+      case 'PAYMENT_COMPLETE': return '결제완료';
+      case 'PREPARING': return '배송준비중';
+      case 'SHIPPING': return '배송중';
+      case 'DELIVERED': return '배송완료';
+      case 'CANCEL_COMPLETED': return '주문취소';
+      default: return '배송준비중';
+    }
+  };
+
   const handleLookupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderNumber || !password) return;
@@ -17,7 +30,6 @@ const GuestOrderLookup: React.FC = () => {
     setOrderData(null);
 
     try {
-      // 🌟 아까 백엔드 OrderController에 증설해둔 검증용 GET endpoint 명세 호출 가동
       const response = await fetch(
         `http://localhost:8080/api/orders/non-member?orderNumber=${encodeURIComponent(orderNumber)}&password=${encodeURIComponent(password)}`
       );
@@ -40,10 +52,13 @@ const GuestOrderLookup: React.FC = () => {
       <header className="lookup-header">
         <h1>GUEST ORDER TRACKING</h1>
         <p>비회원 주문서 및 실시간 배송 흐름 교차 검증 센터입니다.</p>
+        {/* 🌟 홈으로 돌아가기 버튼 추가 */}
+        <button type="button" className="btn-home-return" onClick={() => navigate('/')}>
+          메인 홈으로 돌아가기
+        </button>
       </header>
 
       <div className="lookup-main-wrapper">
-        {/* 왼편: 검색 폼 입력 구역 */}
         <form onSubmit={handleLookupSubmit} className="lookup-form-card">
           <h3>비회원 인증조회 명세</h3>
           <div className="lookup-input-group">
@@ -71,7 +86,6 @@ const GuestOrderLookup: React.FC = () => {
           </button>
         </form>
 
-        {/* 오른편: 성공 시 띄워줄 실시간 영수증 명세 출력 바인딩 보드 */}
         <div className="lookup-result-section">
           {orderData ? (
             <div className="receipt-card animate-fade">
@@ -92,16 +106,37 @@ const GuestOrderLookup: React.FC = () => {
                 <span>최종 정산 금액</span>
                 <span className="price-tag">₩{Number(orderData.totalPrice).toLocaleString()}</span>
               </div>
+              
               <div className="receipt-row" style={{ marginTop: '15px' }}>
                 <span>실시간 배송 동향</span>
-                <span className={`status-badge ${orderData.status === 'DELIVERED' || orderData.status === '배송완료' ? 'delivered' : 'shipping'}`}>
-                  {orderData.status || '배송준비중'}
+                <span className={`status-badge ${orderData.status === 'DELIVERED' ? 'delivered' : 'shipping'}`}>
+                  {getStatusKr(orderData.status)}
                 </span>
               </div>
+
+              {(orderData.courierName || orderData.trackingNumber) && (
+                <div className="receipt-row" style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #333' }}>
+                  <span>배송 정보</span>
+                  <a 
+                    href={`https://search.naver.com/search.naver?query=${encodeURIComponent(orderData.courierName + ' ' + orderData.trackingNumber)}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ 
+                      color: '#8f8576', 
+                      textDecoration: 'underline', 
+                      fontWeight: 'bold',
+                      cursor: 'pointer' 
+                    }}
+                    title="클릭 시 네이버에서 배송 현황을 조회합니다."
+                  >
+                    {orderData.courierName || '배송사 미지정'} / {orderData.trackingNumber || '송장 미입력'}
+                  </a>
+                </div>
+              )}
             </div>
           ) : (
             <div className="receipt-placeholder-box">
-              <p>주문 번호와 패스워드를 기입하시면 백엔드 DB의 실시간 배송 및 원장 팩트 정보가 이곳에 바인딩됩니다.</p>
+              <p>주문 번호와 비밀번호를 입력하시면,<br />고객님의 소중한 주문 내역과 배송 상태를 확인하실 수 있습니다.</p>
             </div>
           )}
         </div>

@@ -93,6 +93,24 @@
   margin-top: 10px;
 }
 
+.btn-home-return {
+  display: inline-block;
+  margin-top: 15px;
+  background: none;
+  border: 1px solid #111111 !important;
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  color: #111111 !important;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-home-return:hover {
+  background-color: #111111 !important;
+  color: #ffffff !important;
+}
+
 .receipt-placeholder-box {
   border: 1px dashed #dddddd !important;
   padding: 80px 30px;
@@ -111,6 +129,26 @@
   font-size: 0.88rem;
   margin-bottom: 14px;
   color: #444444 !important;
+}
+
+.receipt-row a {
+  color: #111111 !important;
+  text-decoration: underline;
+  text-decoration-color: #8f8576;
+  text-underline-offset: 4px;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  transition: color 0.2s;
+}
+
+.receipt-row a:hover {
+  color: #000000 !important;
+  text-decoration-color: #111111;
+}
+
+.receipt-row span:first-child {
+  font-weight: 600;
+  color: #111111 !important;
 }
 
 .bold-text {
