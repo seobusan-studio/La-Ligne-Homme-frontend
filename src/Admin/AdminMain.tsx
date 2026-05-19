@@ -70,6 +70,10 @@ const AdminMain: React.FC = () => {
   // 현재 어떤 주문 번호의 상세 내역이 펼쳐져 있는지 기억하는 상태창
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
 
+  // 상세 목록 내부 인풋 필드 제어용 실시간 운송장 데이터 상태창
+  const [courierNameInput, setCourierNameInput] = useState<string>('');
+  const [trackingNumberInput, setTrackingNumberInput] = useState<string>('');
+
   // 복수의 주문 알림 패킷을 유실 없이 적체 보관하기 위한 배열형 상태창
   const [notifications, setNotifications] = useState<any[]>([]);
 
@@ -211,43 +215,48 @@ const AdminMain: React.FC = () => {
     setOptionsList(prev => prev.map((opt, i) => i === index ? { ...opt, [field]: value } : opt));
   };
 
-  /* =========================================================================
-   * 🌟 [교정 완결 - 진짜 쇼핑몰용 배송중 송장 파이프라인 인터셉터 결합]
-   * 기존 코드를 훼손하지 않고, 상태가 '배송중'으로 전환되는 찰나에 브라우저 프롬프트를 기습 발동하여 
-   * 입력한 courierName 과 trackingNumber 를 패킷 바디에 실어 백엔드 DB 원장으로 강습 영속화 시킵니다.
-   * ========================================================================= */
   const handleOrderStatusChange = async (orderId: string, newStatus: string) => {
-    let bodyPayload: any = { status: newStatus };
-
-    if (newStatus === '배송중') {
-      const courier = prompt("🚚 배송 처리를 위해 택배사 이름을 입력하세요.\n(예: 우체국택배, CJ대한통운, 한진택배)", "우체국택배");
-      if (courier === null) return; 
-      
-      const tracking = prompt("🔢 운송장 번호를 정확히 입력해 주십시오. (숫자만 입력)");
-      if (tracking === null) return; 
-      if (!tracking.trim()) {
-        alert("송장 번호가 누락되어 배송중 상태 변경 처리가 취소되었습니다.");
-        return;
-      }
-
-      bodyPayload.courierName = courier;
-      bodyPayload.trackingNumber = tracking;
-    }
-
     try {
       const response = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyPayload)
+        body: JSON.stringify({ status: newStatus })
       });
       if (response.ok) {
-        alert(`주문 번호 [${orderId}]의 상태가 [${newStatus}](으)로 DB에 완벽 반영되었습니다.`);
+        alert(`주문 번호 [${orderId}]의 상태가 [${newStatus}](으)로 변경 완료되었습니다.`);
         loadBackendData();
       } else {
         alert('배송 상태 업데이트 실패');
       }
     } catch (err) {
       alert('백엔드 상태 변경 API 서버가 꺼져있습니다.');
+    }
+  };
+
+  const handleSaveTracking = async (orderId: number, currentStatus: string) => {
+    if (!courierNameInput.trim() || !trackingNumberInput.trim()) {
+      alert("배송 처리를 위해 택배사 선택과 운송장 번호를 정확히 기입해 주십시오.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: currentStatus,
+          courierName: courierNameInput.trim(),
+          trackingNumber: trackingNumberInput.trim()
+        })
+      });
+      if (response.ok) {
+        alert(`주문 번호 [${orderId}]의 운송장 정보가 데이터베이스 원장에 안전하게 영속화되었습니다.`);
+        loadBackendData();
+      } else {
+        alert('운송장 정보 저장 실패');
+      }
+    } catch (err) {
+      alert('백엔드 통신 실패 또는 API 서버 확인 요망');
     }
   };
 
@@ -407,7 +416,6 @@ const AdminMain: React.FC = () => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleMultipleFiles(Array.from(e.dataTransfer.files));
     }
@@ -505,7 +513,14 @@ const AdminMain: React.FC = () => {
   };
 
   const toggleOrderDetails = (orderId: number) => {
-    setExpandedOrderId(prev => prev === orderId ? null : orderId);
+    if (expandedOrderId === orderId) {
+      setExpandedOrderId(null);
+    } else {
+      const targetOrder = orders.find(o => (o.id || o.orderId) === orderId);
+      setCourierNameInput(targetOrder?.courierName || '');
+      setTrackingNumberInput(targetOrder?.trackingNumber || '');
+      setExpandedOrderId(orderId);
+    }
   };
 
   const handleDismissNotification = (keyIdToKill: string) => {
@@ -528,7 +543,7 @@ const AdminMain: React.FC = () => {
                 <p className="card-value refund">₩ {stats.totalRefund.toLocaleString()}</p>
                 <span className="card-badge refund">취소 완료 기준</span>
               </div>
-              <div className="stats-card highlight">
+              <div className="stats-card Highlands">
                 <h3>당기 순이익</h3>
                 <p className="card-value profit">₩ {stats.netProfit.toLocaleString()}</p>
                 <span className="card-badge profit">매출 - 환불</span>
@@ -541,7 +556,7 @@ const AdminMain: React.FC = () => {
             </section>
 
             <section className="dashboard-detail-section">
-              <h2>최근 주문 동향 (실시간 연동)</h2>
+              <h2>최근 주문 동향</h2>
               <table className="admin-table">
                 <thead>
                   <tr>
@@ -744,7 +759,7 @@ const AdminMain: React.FC = () => {
               <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', letterSpacing: '0.03em', color: '#fff', textTransform: 'uppercase' }}>🔧 실시간 동적 카테고리 제어 보드</h3>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
                 <input type="text" placeholder="새 카테고리명 (예: 신발, 모자)" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} style={{ background: '#222', border: '1px solid #333', color: '#fff', padding: '8px 12px', borderRadius: '4px', width: '220px' }} />
-                <input type="number" placeholder="전시 순서 (숫자)" value={newCatOrder} onChange={(e) => setNewCatOrder(e.target.value)} style={{ background: '#222', border: '1px solid #333', color: '#fff', padding: '8px 12px', borderRadius: '4px', width: '110px' }} />
+                <input type="number" placeholder="전시 순서 (숫)" value={newCatOrder} onChange={(e) => setNewCatOrder(e.target.value)} style={{ background: '#222', border: '1px solid #333', color: '#fff', padding: '8px 12px', borderRadius: '4px', width: '110px' }} />
                 <button type="button" onClick={handleCreateCategory} style={{ background: '#fff', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '4px', fontWeight: '600', cursor: 'pointer' }}>+ 실시간 개통</button>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -759,7 +774,7 @@ const AdminMain: React.FC = () => {
             </div>
 
             <div className="section-header-box">
-              <h2>상품 리스트 관리 (실시간 DB 연동)</h2>
+              <h2>상품 리스트 관리</h2>
               <button className="btn-admin-action" onClick={() => setProductViewMode('create')}>+ 신규 상품 등록</button>
             </div>
 
@@ -855,7 +870,7 @@ const AdminMain: React.FC = () => {
 
         return (
           <section className="dashboard-detail-section">
-            <h2>주문 및 배송 내역 (실시간 DB 연동)</h2>
+            <h2>주문 및 배송 내역</h2>
             <table className="admin-table">
               <thead>
                 <tr>
@@ -910,6 +925,73 @@ const AdminMain: React.FC = () => {
                           <td colSpan={6} style={{ backgroundColor: '#111111', padding: '20px', border: '1px solid #222' }}>
                             <div style={{ textAlign: 'left' }}>
                               
+                              {/* 🌟 [교정완결구역 - 텍배사 이름 직접 입력 인풋을 정석 셀렉트 드롭다운 박스로 완전 대체] */}
+                              <div style={{
+                                marginBottom: '20px',
+                                padding: '14px',
+                                backgroundColor: '#161616',
+                                border: '1px solid #333',
+                                borderRadius: '4px'
+                              }}>
+                                <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#8f8576', letterSpacing: '0.03em' }}>
+                                  📦 DELIVERY TRACKING INPUT (운송장 정보 직접 입력)
+                                </h4>
+                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                                    <label style={{ fontSize: '11px', color: '#888' }}>택배사 이름</label>
+                                    <select 
+                                      value={courierNameInput}
+                                      onChange={(e) => setCourierNameInput(e.target.value)}
+                                      style={{ 
+                                        background: '#222', 
+                                        border: '1px solid #444', 
+                                        color: '#fff', 
+                                        padding: '8px', 
+                                        borderRadius: '4px', 
+                                        fontSize: '12px',
+                                        cursor: 'pointer',
+                                        height: '35px'
+                                      }}
+                                    >
+                                      <option value="">-- 국내 배송 택배사 선택 --</option>
+                                      <option value="우체국택배">우체국택배</option>
+                                      <option value="CJ대한통운">CJ대한통운</option>
+                                      <option value="한진택배">한진택배</option>
+                                      <option value="로젠택배">로젠택배</option>
+                                      <option value="롯데택배">롯데택배</option>
+                                    </select>
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                                    <label style={{ fontSize: '11px', color: '#888' }}>운송장 번호</label>
+                                    <input 
+                                      type="text" 
+                                      placeholder="숫자만 입력" 
+                                      value={trackingNumberInput}
+                                      onChange={(e) => setTrackingNumberInput(e.target.value)}
+                                      style={{ background: '#222', border: '1px solid #444', color: '#fff', padding: '8px', borderRadius: '4px', fontSize: '12px', height: '17px' }}
+                                    />
+                                  </div>
+                                  <button 
+                                    type="button"
+                                    onClick={() => handleSaveTracking(oId, order.status)}
+                                    style={{
+                                      alignSelf: 'flex-end',
+                                      background: '#8f8576',
+                                      color: '#000',
+                                      border: 'none',
+                                      padding: '9px 20px',
+                                      borderRadius: '4px',
+                                      fontWeight: '600',
+                                      fontSize: '12px',
+                                      cursor: 'pointer',
+                                      height: '35px'
+                                    }}
+                                  >
+                                    저장
+                                  </button>
+                                </div>
+                              </div>
+
                               <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#8f8576', letterSpacing: '0.03em' }}>
                                 🚚 SHIPPING ADDRESS INFO (고객 배송 명세서)
                               </h4>
@@ -935,7 +1017,7 @@ const AdminMain: React.FC = () => {
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginTop: '5px' }}>
                                 <thead>
                                   <tr style={{ borderBottom: '1px solid #262626', color: '#888' }}>
-                                    <th style={{ textAlign: 'left', padding: '8px' }}>商品명</th>
+                                    <th style={{ textAlign: 'left', padding: '8px' }}>상품명</th>
                                     <th style={{ textAlign: 'center', padding: '8px', width: '150px' }}>옵션 (사이즈/색상)</th>
                                     <th style={{ textAlign: 'center', padding: '8px', width: '80px' }}>수량</th>
                                     <th style={{ textAlign: 'right', padding: '8px', width: '120px' }}>단가</th>
@@ -1034,7 +1116,7 @@ const AdminMain: React.FC = () => {
       case 'users':
         return (
           <section className="dashboard-detail-section">
-            <h2>회원 계정 관리 (실시간 DB 연동)</h2>
+            <h2>회원 계정 관리</h2>
             <table className="admin-table">
               <thead>
                 <tr>
@@ -1065,10 +1147,54 @@ const AdminMain: React.FC = () => {
           </section>
         );
 
+      case 'sales':
+        return (
+          <section className="dashboard-detail-section">
+            <h2>매출 정산 관리</h2>
+            <div className="stats-grid" style={{ marginBottom: '30px' }}>
+              <div className="stats-card">
+                <h3>총 매출액</h3>
+                <p className="card-value">₩ {stats.totalSales.toLocaleString()}</p>
+              </div>
+              <div className="stats-card">
+                <h3>총 환불액</h3>
+                <p className="card-value refund">₩ {stats.totalRefund.toLocaleString()}</p>
+              </div>
+              <div className="stats-card">
+                <h3>당기 순이익</h3>
+                <p className="card-value profit">₩ {stats.netProfit.toLocaleString()}</p>
+              </div>
+            </div>
+            
+            <div className="admin-table-box" style={{ background: '#111', padding: '20px', borderRadius: '8px' }}>
+              <h3 style={{ color: '#fff', fontSize: '15px', marginBottom: '15px' }}>일별 매출 현황</h3>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>날짜</th>
+                    <th>매출액</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(stats.dailySales || {}).sort((a,b) => b[0].localeCompare(a[0])).map(([date, amount]) => (
+                    <tr key={date}>
+                      <td>{date}</td>
+                      <td className="price-cell">₩ {Number(amount).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                  {Object.keys(stats.dailySales || {}).length === 0 && (
+                    <tr><td colSpan={2} style={{ textAlign: 'center', color: '#555' }}>데이터가 없습니다.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+
       case 'marketing':
         return (
           <section className="dashboard-detail-section">
-            <h2>뉴스레터 구독자 리스트 (실시간 DB 연동)</h2>
+            <h2>뉴스레터 구독자 리스트</h2>
             <table className="admin-table">
               <thead>
                 <tr>
@@ -1161,6 +1287,7 @@ const AdminMain: React.FC = () => {
           <button className={`menu-item ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>상품 관리</button>
           <button className={`menu-item ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => { setActiveTab('orders'); setOrderCurrentPage(1); }}>주문 / 배송</button>
           <button className={`menu-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>회원 관리</button>
+          <button className={`menu-item ${activeTab === 'sales' ? 'active' : ''}`} onClick={() => setActiveTab('sales')}>매출 관리</button>
           <button className={`menu-item ${activeTab === 'marketing' ? 'active' : ''}`} onClick={() => setActiveTab('marketing')}>마케팅 / 뉴스레터</button>
           <div className="menu-divider"></div>
           <button className="menu-item exit-btn" onClick={() => navigate('/')}>일반 메인 홈으로</button>

@@ -49,20 +49,11 @@ const ProductDetail: React.FC = () => {
         const result = await res.json();
         
         if (result.data && isMounted) {
-          const SESSION_KEY = 'laligne_session';
-          const sessionRaw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
-          const session = sessionRaw ? JSON.parse(sessionRaw) : null;
-          const userIdentifier = session ? (session.name || session.id || 'user') : 'guest';
-          const dynamicCartKey = `laligne_cart_${userIdentifier}`;
-          const currentCart = JSON.parse(localStorage.getItem(dynamicCartKey) || '[]');
-
           const loadedProduct = result.data;
           if (loadedProduct.options) {
             loadedProduct.options = loadedProduct.options.map((opt: any) => {
-              // 🌟 장바구니 수량 차감 연산 시에도 고유 id 가 정합하도록 보완
-              const cartItem = currentCart.find((item: any) => item.id === loadedProduct.id && item.optionId === opt.id);
-              const cartQty = cartItem ? cartItem.quantity : 0;
-              return { ...opt, stockQuantity: Math.max(0, opt.stockQuantity - cartQty) };
+              // 🌟 [교정] 장바구니에 담긴 임시 수량으로 인해 실재고 카운트가 선차감되어 노출되던 고질적 버그 격리 분리
+              return { ...opt, stockQuantity: Math.max(0, opt.stockQuantity) };
             });
           }
 
@@ -196,14 +187,7 @@ const ProductDetail: React.FC = () => {
 
     localStorage.setItem(dynamicCartKey, JSON.stringify(currentCart));
 
-    if (product && product.options) {
-      const updatedOptions = product.options.map(opt => 
-        String(opt.id) === selectedOptionId
-          ? { ...opt, stockQuantity: Math.max(0, opt.stockQuantity - quantity) }
-          : opt
-      );
-      setProduct({ ...product, options: updatedOptions });
-    }
+    // 🌟 [교정] 단순 장바구니(BAG) 추가 단계에서 리액트 내부 로컬 stock 상태를 가압류식으로 마이너스 차감하던 실책 코드 완벽 소거 격리
     setSelectedOptionId(''); 
     setQuantity(1); 
 
