@@ -1,3 +1,4 @@
+// src/ProductDetail/Checkout.tsx
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Checkout.css';
@@ -8,7 +9,7 @@ const Checkout: React.FC = () => {
   
   // 🌟 [정밀 교정] 형님의 지시를 적극 준수하여 넘어오는 배송비 변수를 과감히 차단하고 0원 무료배송으로 락다운합니다.
   const { selectedItems = [], totalAmount = 0 } = (location.state || {}) as any;
-  const deliveryFee = 0; 
+  const deliveryFee: number = 0;
 
   // 로그인 여부 상태판별 및 비회원 전용 주문 비밀번호 상태창 생성 (오리지널 사수)
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -172,7 +173,15 @@ const Checkout: React.FC = () => {
 
       const result = await response.json();
       if (response.ok && result.status !== 'ERROR') {
-        alert('🎉 주문 승인 및 결제가 성공적으로 처리 완료되었습니다.');
+        
+        /* =========================================================================
+         * 🌟 [정밀 교정 개통 구역] 결제 수단 분류형 알림창 피드백 분기 가드선
+         * ========================================================================= */
+        if (paymentMethod === '무통장입금') {
+          alert('📋 무통장 주문 접수가 완료되었습니다. 가상계좌로 입금해 주세요.');
+        } else {
+          alert('🎉 주문 승인 및 카드 결제가 성공적으로 처리 완료되었습니다.');
+        }
 
         const successData = {
           orderNumber: result.data.orderNumber, 
@@ -353,7 +362,7 @@ const Checkout: React.FC = () => {
                   />
                   <button 
                     type="button" 
-                    onClick={handleOpenPostcode}
+                    onClick={handleOpenPostcode} 
                     style={{
                       background: '#111',
                       color: '#fff',
@@ -418,7 +427,6 @@ const Checkout: React.FC = () => {
             <div className="checkout-preview-list">
               {selectedItems.map((item: any, idx: number) => (
                 <div key={idx} className="preview-item-row">
-                  {/* 🌟 [교정 개통] 이름, 사이즈와 함께 고른 색상 명세(CL: )까지 가로선 벨트에 세밀하게 표출 */}
                   <span>{item.name} (SZ: {item.size} / CL: {item.color || '기본'}) x {item.quantity}</span>
                   <span>₩{(item.price * item.quantity).toLocaleString()}</span>
                 </div>
@@ -433,7 +441,7 @@ const Checkout: React.FC = () => {
             </div>
             <div className="summary-row">
               <span>배송비</span>
-              <span>{deliveryFee === 0 ? 'FREE' : `₩${deliveryFee.toLocaleString()}`}</span>
+              <span>{deliveryFee === 0 ? 'FREE' : `₩${(deliveryFee as any).toLocaleString()}`}</span>
             </div>
 
             <div className="checkout-divider"></div>

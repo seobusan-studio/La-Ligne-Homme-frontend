@@ -1,3 +1,4 @@
+// src/ProductDetail/AdminMain.tsx
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminMain.css';
@@ -29,6 +30,13 @@ const AdminMain: React.FC = () => {
   // 어드민 상품 리스트 제어용 실시간 서칭 키워드 및 카테고리 필터값
   const [searchKeyword, setSearchKeyword] = useState('');
   const [filterCategoryId, setFilterCategoryId] = useState<number | 'all'>('all');
+
+  /* =========================================================================
+   * 🌟 [신설 - 주문 / 배송 전용 고도화 정밀 필터링 상태창]
+   * ========================================================================= */
+  const [orderSearchCustomer, setOrderSearchCustomer] = useState(''); // 주문자 이름 검색어
+  const [orderStartDate, setOrderStartDate] = useState('');          // 기간 검색 시작일 (YYYY-MM-DD)
+  const [orderEndDate, setOrderEndDate] = useState('');              // 기간 검색 종료일 (YYYY-MM-DD)
 
   // 첫 줄이 FREE로 오염되는 것을 방지하기 위해 빈 문자열("")로 담백하게 스타트합니다.
   const [optionsList, setOptionsList] = useState<any[]>([
@@ -156,7 +164,7 @@ const AdminMain: React.FC = () => {
               newAlertCards.push({
                 id: currentId,
                 keyId: uniqueKeyId,
-                message: `📦 NEW ORDER ARRIVED!\n새로운 주문이 실시간 수주되었습니다.\n• 주문 번호: No.${currentId}\n• 주문자: ${ord.customer || ord.customerName || '비회원'}\n• 결제 금액: ₩${Number(ord.price || ord.totalPrice || 0).toLocaleString()}`
+                message: `📦 NEW ORDER ARRIVED!\n새로운 주문이 실시간 수주되었습니다.\n• 주문 번호: ${ord.orderNumber || currentId}\n• 주문자: ${ord.customer || ord.customerName || '비회원'}\n• 결제 금액: ₩${Number(ord.price || ord.totalPrice || 0).toLocaleString()}`
               });
             }
           });
@@ -579,6 +587,7 @@ const AdminMain: React.FC = () => {
               <table className="admin-table">
                 <thead>
                   <tr>
+                    {/* 🌟 [교정 완료] 순정 컬럼 헤드 고정 */}
                     <th>주문 번호</th>
                     <th>주문자</th>
                     <th>결제 금액</th>
@@ -588,7 +597,8 @@ const AdminMain: React.FC = () => {
                 <tbody>
                   {[...orders].sort((a, b) => Number(b.id || b.orderId) - Number(a.id || a.orderId)).slice(0, 5).map(order => (
                     <tr key={order.id || order.orderId}>
-                      <td>{order.id || order.orderId}</td>
+                      {/* 🌟 [대개혁 수혈] 데이터베이스 일련번호가 아닌 진짜 명품 주문 고유코드(orderNumber) 사출선 개통 */}
+                      <td style={{ fontWeight: '600', color: '#8f8576' }}>{order.orderNumber || order.id || order.orderId}</td>
                       <td>{order.customer || order.customerName || '비회원'}</td>
                       <td className="price-cell">₩ {(order.price || order.totalPrice || 0).toLocaleString()}</td>
                       <td>
@@ -881,7 +891,32 @@ const AdminMain: React.FC = () => {
         );
 
       case 'orders':
-        const sortedOrders = [...orders].sort((a, b) => Number(b.id || b.orderId) - Number(a.id || a.orderId));
+        /* =========================================================================
+         * 🌟 [신설 - 주문 / 배송 탭 전용 실시간 하이브리드 필터링 엔진]
+         * ========================================================================= */
+        const filteredOrders = orders.filter(order => {
+          // 1. 주문자 성명 키워드 매칭 가드선
+          if (orderSearchCustomer.trim() !== '') {
+            const customerNameStr = (order.customer || order.customerName || '').toLowerCase();
+            if (!customerNameStr.includes(orderSearchCustomer.toLowerCase())) return false;
+          }
+
+          // 2. 주문 일자 기간별 록온 필터링선 (날짜 문자열 파싱 비교)
+          if (orderStartDate || orderEndDate) {
+            const rawOrderDate = order.date || order.createdAt || ''; // 형식: YYYY-MM-DD
+            if (rawOrderDate) {
+              const pureOrderDate = rawOrderDate.substring(0, 10); // 시간 절삭, 오직 날짜만 추출
+              
+              if (orderStartDate && pureOrderDate < orderStartDate) return false;
+              if (orderEndDate && pureOrderDate > orderEndDate) return false;
+            } else {
+              return false; // 날짜가 아예 없는 유령 패킷은 기간 검색 시 선제 제외
+            }
+          }
+          return true;
+        });
+
+        const sortedOrders = [...filteredOrders].sort((a, b) => Number(b.id || b.orderId) - Number(a.id || a.orderId));
         const totalOrderPages = Math.ceil(sortedOrders.length / ORDERS_PER_PAGE);
         const indexOfLastOrder = orderCurrentPage * ORDERS_PER_PAGE;
         const indexOfFirstOrder = indexOfLastOrder - ORDERS_PER_PAGE;
@@ -890,9 +925,64 @@ const AdminMain: React.FC = () => {
         return (
           <section className="dashboard-detail-section">
             <h2>주문 및 배송 내역</h2>
+
+            {/* 🌟 [신설 - 주문 탭 럭셔리 다크 인터페이스 전용 트리플 필터바 벨트] */}
+            <div className="admin-filter-bar" style={{ 
+              display: 'flex', 
+              gap: '14px', 
+              marginBottom: '25px', 
+              alignItems: 'center',
+              background: '#141414',
+              padding: '16px',
+              borderRadius: '6px',
+              border: '1px solid #262626'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', color: '#8f8576', fontWeight: '600' }}>주문자 검색</label>
+                <input 
+                  type="text" 
+                  placeholder="👤 주문자 성명 실시간 서칭..." 
+                  value={orderSearchCustomer} 
+                  onChange={(e) => { setOrderSearchCustomer(e.target.value); setOrderCurrentPage(1); }} 
+                  style={{ background: '#111', color: '#fff', border: '1px solid #333', padding: '9px 12px', borderRadius: '4px', width: '200px', fontSize: '13px', height: '17px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', color: '#8f8576', fontWeight: '600' }}>조회 시작일</label>
+                <input 
+                  type="date" 
+                  value={orderStartDate} 
+                  onChange={(e) => { setOrderStartDate(e.target.value); setOrderCurrentPage(1); }} 
+                  style={{ background: '#111', color: '#fff', border: '1px solid #333', padding: '8px 12px', borderRadius: '4px', fontSize: '13px', colorScheme: 'dark', height: '17px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', color: '#8f8576', fontWeight: '600' }}>조회 종료일</label>
+                <input 
+                  type="date" 
+                  value={orderEndDate} 
+                  onChange={(e) => { setOrderEndDate(e.target.value); setOrderCurrentPage(1); }} 
+                  style={{ background: '#111', color: '#fff', border: '1px solid #333', padding: '8px 12px', borderRadius: '4px', fontSize: '13px', colorScheme: 'dark', height: '17px' }}
+                />
+              </div>
+
+              {orderSearchCustomer || orderStartDate || orderEndDate ? (
+                <button 
+                  type="button" 
+                  onClick={() => { setOrderSearchCustomer(''); setOrderStartDate(''); setOrderEndDate(''); setOrderCurrentPage(1); }} 
+                  style={{ alignSelf: 'flex-end', background: '#222', color: '#bbb', border: '1px solid #333', padding: '9px 14px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', height: '35px', fontWeight: '600' }}
+                >
+                  검색 조건 초기화
+                </button>
+              ) : null}
+            </div>
+
             <table className="admin-table">
               <thead>
                 <tr>
+                  {/* [순정 사수 고정] */}
                   <th>주문 번호</th>
                   <th>주문자</th>
                   <th>주문 일자</th>
@@ -909,7 +999,8 @@ const AdminMain: React.FC = () => {
                   return (
                     <React.Fragment key={oId}>
                       <tr>
-                        <td>{order.id || order.orderId}</td>
+                        {/* 🌟 [교정 대개혁 완결] 관리자도 마이페이지 및 카톡 문자 원장과 일치하게 orderNumber를 최우선 표출합니다. */}
+                        <td style={{ fontWeight: '600', color: '#8f8576' }}>{order.orderNumber || order.id || order.orderId}</td>
                         <td>{order.customer || order.customerName || '비회원'}</td>
                         <td>{order.date || order.createdAt || '-'}</td>
                         <td className="price-cell">₩ {(order.price || order.totalPrice || 0).toLocaleString()}</td>
@@ -944,7 +1035,7 @@ const AdminMain: React.FC = () => {
                           <td colSpan={6} style={{ backgroundColor: '#111111', padding: '20px', border: '1px solid #222' }}>
                             <div style={{ textAlign: 'left' }}>
                               
-                              {/* 🌟 [교정완결구역 - 텍배사 이름 직접 입력 인풋을 정석 셀렉트 드롭다운 박스로 완전 대체] */}
+                              {/* 🌟 [교정완결구역] */}
                               <div style={{
                                 marginBottom: '20px',
                                 padding: '14px',
@@ -1067,7 +1158,7 @@ const AdminMain: React.FC = () => {
                     </React.Fragment>
                   );
                 })}
-                {orders.length === 0 && <tr><td colSpan={6} style={{textAlign:'center', color:'#555'}}>조회할 배송 내역이 없습니다.</td></tr>}
+                {sortedOrders.length === 0 && <tr><td colSpan={6} style={{textAlign:'center', color:'#555'}}>조회조건 혹은 필터 조건에 부합하는 배송 내역이 없습니다.</td></tr>}
               </tbody>
             </table>
 
