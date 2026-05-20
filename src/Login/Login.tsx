@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
+import { FindPasswordModal } from './FindPasswordModal'; // 🌟 [추가 수혈] 비밀번호 찾기 모달 컴포넌트 임포트 개통
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +16,9 @@ const Login: React.FC = () => {
   const [emailValid, setEmailValid] = useState(false);
   const [passwordValid, setPasswordValid] = useState(false);
   const [authError, setAuthError] = useState(false);
+
+  // 🌟 [신설] 비밀번호 찾기 카카오 팝업창 오픈 제어용 동적 상태 스위치
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   // 이미 로그인되어 있으면 홈으로 튕겨냄 (오리지널 로직 그대로)
   useEffect(() => {
@@ -194,7 +198,14 @@ const Login: React.FC = () => {
                 <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} />
                 로그인 상태 유지
               </label>
-              <a href="#" className="forgot-link">비밀번호를 잊으셨나요?</a>
+              {/* 🌟 [교정 완료] href="#"로 인한 상단 스크롤 튕김을 방지하고, 클릭 시 카카오 팝업창이 올라오도록 바인딩 스위칭 */}
+              <span 
+                onClick={() => setIsModalOpen(true)} 
+                className="forgot-link" 
+                style={{ cursor: 'pointer', color: 'var(--color-gold, #8f8576)', fontWeight: '500' }}
+              >
+                비밀번호를 잊으셨나요?
+              </span>
             </div>
 
             <button type="submit" className="btn-submit">로그인</button>
@@ -211,7 +222,10 @@ const Login: React.FC = () => {
       {/* Footer */}
       <footer role="contentinfo">
         <p>&copy; 2025 La Ligne Homme. All rights reserved.</p>
-      </footer>
+      </footer >
+
+      {/* 🌟 [신설 오버레이 결합] 껍데기 모달을 화면에 렌더링하고 상태 동기화 링크 연결 */}
+      <FindPasswordModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 };

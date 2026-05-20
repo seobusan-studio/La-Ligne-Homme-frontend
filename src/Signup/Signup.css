@@ -91,13 +91,36 @@
 .signup-page-box .field { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.25rem; }
 .signup-page-box .field label { font-size: 0.7rem; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-text-sub); }
 .signup-page-box .field label .required { color: var(--color-gold); margin-left: 2px; }
-.signup-page-box .field input { height: 52px; padding: 0 1rem; font-family: var(--font-sans); font-size: 0.9rem; font-weight: 300; color: var(--color-text); background: var(--color-bg); border: 1px solid var(--color-border); outline: none; transition: border-color 0.2s; -webkit-appearance: none; appearance: none; border-radius: 0; }
+.signup-page-box .field input { height: 52px; padding: 0 1rem; font-family: var(--font-sans); font-size: 0.9rem; font-weight: 300; color: var(--color-text); background: var(--color-bg); border: 1px solid var(--color-border); outline: none; transition: border-color 0.2s; -webkit-appearance: none; appearance: none; border-radius: 0; width: 100%; }
 .signup-page-box .field input:focus { border-color: var(--color-gold); }
 .signup-page-box .field input.error { border-color: var(--color-error); }
 .signup-page-box .field input.valid { border-color: var(--color-success); }
 .signup-page-box .field-hint { font-size: 0.72rem; color: var(--color-text-sub); margin-top: 0.1rem; }
 .signup-page-box .field-error { font-size: 0.72rem; color: var(--color-error); margin-top: 0.1rem; display: none; }
 .signup-page-box .field-error.visible { display: block; }
+
+/* 🌟 [UX 신설] 휴대폰 열 정렬 및 인증번호 입력 도크 전용 모듈러 디자인 */
+.signup-page-box .phone-input-row,
+.signup-page-box .verification-input-row {
+  display: flex !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+
+.signup-page-box .phone-input-row input,
+.signup-page-box .verification-input-row input {
+  flex: 1 !important;
+}
+
+.signup-page-box .phone-input-row button,
+.signup-page-box .verification-input-row button {
+  width: 120px !important; /* 🌟 확인 버튼과 인증 요청 버튼의 가로폭을 일치시켜 오른쪽 정렬선을 완벽 사수 */
+  flex-shrink: 0 !important;
+  height: 52px !important;
+  font-family: var(--font-sans);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
 
 /* Password strength */
 .signup-page-box .password-wrap { position: relative; }

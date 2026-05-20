@@ -231,7 +231,7 @@
   border: 1px solid #eeeeee;
   background-color: #fcfcfc;
   display: flex;
-  justifyContent: space-between;
+  justify-content: space-between;
   align-items: center;
 }
 
@@ -335,4 +335,147 @@
   font-size: 13px;
   font-weight: 600;
   color: #8f8576;
+}
+
+/* =========================================================================
+ * 🌟 [신설 수혈] 비밀번호 직접 변경 섹션 전용 메종 드 라 린느 클래스 규격
+ * 형님의 크롬 강제 다크모드 원천 차단 정책 및 화이트 아이덴티티를 100% 계승
+ * ========================================================================= */
+
+.mypage-header-flex-layout {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-end !important;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.mypage-brand-title-group {
+  flex: 1;
+  min-width: 280px;
+}
+
+.mypage-pw-trigger-box {
+  padding-bottom: 5px;
+}
+
+.btn-password-toggle {
+  background: none;
+  border: 1px solid #111111;
+  color: #111111 !important;
+  padding: 10px 20px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border-radius: 0px !important; /* 메종 직선 칼각 구현 */
+}
+
+.btn-password-toggle:hover {
+  background-color: #f7f7f7 !important;
+  color: #8f8576 !important;
+  border-color: #8f8576 !important;
+}
+
+.btn-password-toggle.active {
+  background-color: #111111 !important;
+  color: #ffffff !important;
+  border-color: #111111 !important;
+}
+
+.pw-amend-section {
+  margin-bottom: 50px;
+  padding: 30px;
+  border: 1px solid #111111;
+  background-color: #fbfbfb !important; /* 연한 백그라운드로 구획 분할 */
+  text-align: left;
+}
+
+.pw-amend-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.01em;
+  color: #111111 !important;
+}
+
+.pw-amend-desc {
+  margin: 0 0 24px 0;
+  font-size: 11px;
+  color: #777777 !important;
+  letter-spacing: 0.01em;
+  line-height: 1.5;
+}
+
+.pw-amend-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 400px;
+}
+
+.pw-input-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pw-input-field label {
+  font-size: 11px;
+  color: #444444 !important;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.pw-input-field input {
+  padding: 10px 12px;
+  border: 1px solid #cccccc;
+  font-size: 13px;
+  outline: none;
+  background-color: #ffffff !important;
+  color: #111111 !important;
+  transition: border-color 0.2s ease;
+  border-radius: 0px !important;
+}
+
+.pw-input-field input:focus {
+  border-color: var(--color-gold, #8f8576);
+}
+
+.pw-status-error-hint {
+  color: #c0392b !important;
+  font-size: 12px;
+  font-weight: 500;
+  display: block;
+}
+
+.pw-status-success-hint {
+  color: #16a34a !important;
+  font-size: 12px;
+  font-weight: 500;
+  display: block;
+}
+
+.btn-pw-amend-confirm-trigger {
+  background-color: #111111 !important;
+  color: #ffffff !important;
+  border: none;
+  padding: 12px 0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  letter-spacing: 0.05em;
+  transition: background-color 0.2s ease;
+  border-radius: 0px !important;
+}
+
+.btn-pw-amend-confirm-trigger:hover {
+  background-color: #8f8576 !important;
+}
+
+.btn-pw-amend-confirm-trigger:disabled {
+  background-color: #999999 !important;
+  cursor: not-allowed;
 }
