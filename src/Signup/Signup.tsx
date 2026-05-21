@@ -161,8 +161,10 @@ const Signup: React.FC = () => {
       return;
     }
 
-    const rawPhone = phone.replace(/\D/g);
-    if (rawPhone.length < 10) {
+    // 🌟 [정밀 보정] 플래그와 정규식을 명확히 하여 순수 숫자만 추출합니다.
+    const rawPhone = phone.replace(/[^0-9]/g, ''); 
+    
+    if (rawPhone.length < 10 || rawPhone.includes('undefined')) {
       setSmsError('올바른 휴대폰 번호를 입력해 주세요.');
       return;
     }
@@ -173,12 +175,12 @@ const Signup: React.FC = () => {
       const response = await fetch('http://localhost:8080/api/auth/sms/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: rawPhone })
+        body: JSON.stringify({ phone: rawPhone }) // 깨끗한 숫자만 송출
       });
 
       if (response.ok) {
         setIsCodeSent(true);
-        setIsSmsCooltime(true); // 🌟 격발 성공 즉시 60초 버튼 락(LOCK) 가동
+        setIsSmsCooltime(true); // 격발 성공 즉시 60초 버튼 락(LOCK) 가동
         setTimer(180); // 3분 세팅 리로드
         alert('인증번호가 발송되었습니다. (테스트 모드 시 백엔드 콘솔창 확인)');
       } else {
@@ -198,13 +200,16 @@ const Signup: React.FC = () => {
       return;
     }
 
+    // 🌟 [정밀 보정] 송출 전 번호 원장의 무결성을 재검증합니다.
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+
     try {
       setSmsError('');
       const response = await fetch('http://localhost:8080/api/auth/sms/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: phone.replace(/\D/g, ''),
+          phone: cleanPhone,
           code: verificationCode.trim()
         })
       });
@@ -352,7 +357,7 @@ const Signup: React.FC = () => {
       <header role="banner">
         <nav className="header-nav" aria-label="메인 내비게이션">
           <span onClick={() => navigate('/')} className="logo" style={{ cursor: 'pointer' }}>
-            La Ligne Homme<span>라 린느 옴므</span>
+            La Ligne Hommes<span>라 린느 옴므</span>
           </span>
           <span onClick={() => navigate('/')} className="header-back" style={{ cursor: 'pointer' }}>홈으로</span>
         </nav>
@@ -603,7 +608,7 @@ const Signup: React.FC = () => {
       </main>
 
       <footer role="contentinfo">
-        <p>&copy; 2025 La Ligne Homme. All rights reserved.</p>
+        <p>&copy; 2025 La Ligne Hommes. All rights reserved.</p>
       </footer>
     </div>
   );

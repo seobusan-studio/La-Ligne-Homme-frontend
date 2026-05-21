@@ -155,8 +155,8 @@ const Main: React.FC = () => {
       {/* Header */}
       <header role="banner" id="header" className={isScrolled ? 'scrolled' : ''}>
         <nav className="container header-nav" aria-label="메인 내비게이션">
-          <a href="/" className="logo" aria-label="La Ligne Homme 홈">
-            La Ligne Homme
+          <a href="/" className="logo" aria-label="La Ligne Hommes 홈">
+            La Ligne Hommes
             <span>라 린느 옴므</span>
           </a>
 
@@ -247,13 +247,13 @@ const Main: React.FC = () => {
         <section className="brand-intro" id="brand" aria-labelledby="brand-heading">
           <div className="container">
             <div className="brand-intro-inner">
-              <p className="section-label fade-in">Maison La Ligne Homme</p>
+              <p className="section-label fade-in">Maison La Ligne Hommes</p>
               <h2 id="brand-heading" className="section-title fade-in fade-in-delay-1">
                 세련되고 감각적인 무드,<br /><em>미니멀의 철학</em>
               </h2>
               <div className="brand-divider fade-in"></div>
               <p className="section-body fade-in fade-in-delay-2">
-                '라 린느 옴므(La Ligne Homme)'는 세련되고 감각적인 무드를 지향하는
+                '라 린느 옴므(La Ligne Hommes)'는 세련되고 감각적인 무드를 지향하는
                 남성 컨템포러리 패션 브랜드입니다.<br />
                 프랑스어로 '남성의 선'이라는 의미를 담고 있는 만큼,
                 깔끔한 실루엣 and 미니멀한 디자인이 특징입니다.
@@ -579,7 +579,7 @@ const Main: React.FC = () => {
         {/* Final CTA */}
         <section className="final-cta" id="contact" aria-labelledby="final-cta-heading">
           <div className="container">
-            <p className="section-label fade-in">La Ligne Homme</p>
+            <p className="section-label fade-in">La Ligne Hommes</p>
             <h2 id="final-cta-heading" className="section-title fade-in fade-in-delay-1">
               당신의 선을 완성할<br /><em>시간입니다</em>
             </h2>
@@ -596,8 +596,8 @@ const Main: React.FC = () => {
         <div className="container">
           <div className="footer-top">
             <div className="footer-brand">
-              <a href="/" className="logo" aria-label="La Ligne Homme 홈">
-                La Ligne Homme
+              <a href="/" className="logo" aria-label="La Ligne Hommes 홈">
+                La Ligne Hommes
                 <span>라 린느 옴므</span>
               </a>
               <p className="footer-tagline">
@@ -653,7 +653,7 @@ const Main: React.FC = () => {
           </div>
           <div className="footer-bottom">
             <p className="footer-legal">
-              &copy; 2025 La Ligne Homme. All rights reserved.
+              &copy; 2025 La Ligne Hommes. All rights reserved.
             </p>
             <nav className="footer-legal-links" aria-label="법적 링크">
               <a href="#">개인정보 처리방침</a>

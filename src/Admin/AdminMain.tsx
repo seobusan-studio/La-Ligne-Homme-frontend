@@ -97,11 +97,17 @@ const AdminMain: React.FC = () => {
       const resultCat = await resCat.json();
       if (resultCat.data) {
         setCategories(resultCat.data);
-        if (resultCat.data.length > 0 && !prodName) {
-          setProdCategory(resultCat.data[0].name);
-        }
+        
+        // 🌟 [보정 완결] 무지성 3초 초기화 로직을 철거하고, 
+        // 오직 시스템 초기 로딩 시점에 prodCategory가 완전히 비어있을 때만 기본값을 주입하도록 가드선을 올립니다.
+        setProdCategory(prev => {
+          if (!prev && resultCat.data.length > 0) {
+            return resultCat.data[0].name;
+          }
+          return prev; // 이미 사용자가 값을 골랐거나 초기값이 있다면 절대 건드리지 않음
+        });
       }
-    } catch (e) { console.log('동적 카테고리 원장 통신 대기 중...'); }
+    } catch (e) { console.log('동적 카테고리 원장 통신 대기 중...');}
 
     try {
       const response = await fetch('http://localhost:8080/api/order/admin/settlement');
@@ -231,7 +237,8 @@ const AdminMain: React.FC = () => {
   };
 
   const handleAddOptionRow = () => {
-    setOptionsList(prev => [...prev, { size: '', color: '기본', extraPrice: 0, stockQuantity: 0 }]);
+    // 🌟 신규 옵션 라인은 ID를 null로 지정하여 백엔드가 "인서트(Insert) 대상"임을 알게 합니다.
+    setOptionsList(prev => [...prev, { id: null, size: '', color: '기본', extraPrice: 0, stockQuantity: 0 }]);
   };
 
   const handleRemoveOptionRow = (index: number) => {
@@ -356,14 +363,16 @@ const AdminMain: React.FC = () => {
       
       const backendOptions = fullProd.options || fullProd.productOptions;
       if (backendOptions && backendOptions.length > 0) {
+        // 🌟 [정밀 보정] opt.id를 반드시 주입하여 데이터베이스 식별선을 사수합니다.
         setOptionsList(backendOptions.map((opt: any) => ({
+          id: opt.id || null, 
           size: opt.size,
           color: opt.color || '기본',
           extraPrice: opt.extraPrice || 0,
           stockQuantity: opt.stockQuantity || 0
         })));
       } else {
-        setOptionsList([{ size: '', color: '기본', extraPrice: 0, stockQuantity: fullProd.totalStock || 0 }]);
+        setOptionsList([{ id: null, size: '', color: '기본', extraPrice: 0, stockQuantity: fullProd.totalStock || 0 }]);
       }
       
       if (fullProd.imageUrls && fullProd.imageUrls.length > 0) {
@@ -496,7 +505,9 @@ const AdminMain: React.FC = () => {
       description: prodDesc,
       basePrice: parseInt(prodPrice, 10),
       isVisible: true,
+      // 🌟 [정밀 보정] 무결성 복사: 저장되어 있던 옵션 고유 ID를 백엔드로 안전하게 반환합니다.
       options: optionsList.map(opt => ({
+        id: opt.id || null, 
         size: opt.size.trim(),
         color: opt.color || '기본',
         extraPrice: parseInt(String(opt.extraPrice || 0), 10),
@@ -535,7 +546,7 @@ const AdminMain: React.FC = () => {
         alert(`처리 실패: ${result.message || '서ver 명세 에러'}`);
       }
     } catch (err) {
-      alert('서ver 에러가 포착되었습니다.');
+      alert('서버 에러가 포착되었습니다.');
     }
   };
 
@@ -1391,7 +1402,7 @@ const AdminMain: React.FC = () => {
       </div>
 
       <aside className="admin-sidebar">
-        <div className="admin-logo">La Ligne Homme <span>Backoffice</span></div>
+        <div className="admin-logo">La Ligne Hommes <span>Backoffice</span></div>
         <nav className="admin-menu">
           <button className={`menu-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>대시보드 홈</button>
           <button className={`menu-item ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>상품 관리</button>
