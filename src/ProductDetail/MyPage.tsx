@@ -149,7 +149,7 @@ const MyPage: React.FC = () => {
         
         <div className="nav-grid-center">
           <div onClick={() => navigate('/')} className="nav-left-brand">
-            LA LIGNE HOMME
+            LA LIGNE HOMMES
           </div>
         </div>
         
