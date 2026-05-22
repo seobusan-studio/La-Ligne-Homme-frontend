@@ -266,7 +266,7 @@ const Checkout: React.FC = () => {
           onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
           onMouseLeave={(e) => (e.currentTarget.style.color = '#8f8576')}
         >
-          LA LIGNE HOMME MAIN (메인 홈으로)
+          LA LIGNE HOMMES MAIN (메인 홈으로)
         </div>
       </div>
 

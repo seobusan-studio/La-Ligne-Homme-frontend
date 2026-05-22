@@ -106,7 +106,7 @@ const Login: React.FC = () => {
       <header role="banner">
         <nav className="header-nav" aria-label="메인 내비게이션">
           <span onClick={() => navigate('/')} className="logo" style={{ cursor: 'pointer' }}>
-            La Ligne Homme
+            La Ligne Hommes
             <span>라 린느 옴므</span>
           </span>
           <span onClick={() => navigate('/')} className="header-back" style={{ cursor: 'pointer' }}>홈으로</span>
@@ -221,7 +221,7 @@ const Login: React.FC = () => {
 
       {/* Footer */}
       <footer role="contentinfo">
-        <p>&copy; 2025 La Ligne Homme. All rights reserved.</p>
+        <p>&copy; 2025 La Ligne Hommes. All rights reserved.</p>
       </footer >
 
       {/* 🌟 [신설 오버레이 결합] 껍데기 모달을 화면에 렌더링하고 상태 동기화 링크 연결 */}

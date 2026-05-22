@@ -85,7 +85,7 @@ const ProductDetail: React.FC = () => {
     };
   }, [id]);
 
-  if (loading) return <div className="detail-loading">La Ligne Homme 프리미엄 컬렉션 로딩 중...</div>;
+  if (loading) return <div className="detail-loading">La Ligne Hommes 프리미엄 컬렉션 로딩 중...</div>;
   if (!product) return <div className="detail-error">존재하지 않거나 보관함 처리된 상품입니다.</div>;
 
   // 🌟 [교정] 3초 폴링 리로드 시 튕김을 막기 위해 확실하게 String 형으로 일치화하여 탐색 수행
@@ -286,7 +286,7 @@ const ProductDetail: React.FC = () => {
         {/* 오른쪽 섹션: 쇼핑몰 레이아웃 기반 정보창 명세 패널 */}
         <div className="detail-info-box">
           <div className="info-header-summary">
-            <p className="detail-brand-tag">{product.brandName || 'LA LIGNE HOMME'}</p>
+            <p className="detail-brand-tag">{product.brandName || 'LA LIGNE HOMMES'}</p>
             <h1 className="detail-product-title">{product.name}</h1>
             <div className="price-row-wrapper">
               <span className="detail-product-price">₩{formattedPrice}</span>
