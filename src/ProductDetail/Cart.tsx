@@ -81,7 +81,7 @@ const Cart: React.FC = () => {
     return sum;
   }, 0);
 
-  const deliveryFee = totalAmount >= 100000 || totalAmount === 0 ? 0 : 3000;
+  const deliveryFee = 0;
 
   // 결제 페이지(Checkout)로 선택 품목만 들고 라우팅 점프
   const handleGoToCheckout = (e: React.FormEvent) => {
@@ -221,8 +221,8 @@ const Cart: React.FC = () => {
                 <span>₩{totalAmount.toLocaleString()}</span>
               </div>
               <div className="summary-row">
-                <span>배송비 (10만 원 이상 무료)</span>
-                <span>{deliveryFee === 0 ? 'FREE' : `₩${deliveryFee.toLocaleString()}`}</span>
+                <span>배송비 무료</span>
+                <span>FREE</span>
               </div>
               
               <div className="detail-divider"></div>

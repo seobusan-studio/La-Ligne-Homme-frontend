@@ -1,0 +1,32 @@
+.speed-dial-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 1.5rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.speed-dial-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid rgba(184, 154, 106, 0.55);
+  background: rgba(18, 18, 18, 0.92);
+  color: #b89a6a;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+}
+
+.speed-dial-btn:hover {
+  background: rgba(184, 154, 106, 0.14);
+  border-color: #b89a6a;
+  transform: scale(1.1);
+}

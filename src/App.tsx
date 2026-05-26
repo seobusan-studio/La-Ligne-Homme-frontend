@@ -13,6 +13,7 @@ import MyPage from './ProductDetail/MyPage';
 import Checkout from './ProductDetail/Checkout';
 import GuestOrderLookup from './ProductDetail/GuestOrderLookup';
 import PaymentComplete from './ProductDetail/PaymentComplete';
+import TermsPage from './Terms/TermsPage';
 
 import './App.css';
 
@@ -29,6 +30,7 @@ const App: React.FC = () => {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/guest-lookup" element={<GuestOrderLookup />} />
         <Route path="/payment-complete" element={<PaymentComplete />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminMain />} />
         </Route>

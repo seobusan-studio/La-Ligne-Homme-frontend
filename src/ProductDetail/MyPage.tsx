@@ -291,7 +291,7 @@ const MyPage: React.FC = () => {
                         {order.trackingNumber ? (
                           <div 
                             onClick={() => {
-                              const courierName = order.courierName || '우체국택배';
+                              const courierName = 'CJ대한통운';
                               const trackingNum = order.trackingNumber;
                               const naverSearchUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(courierName + ' ' + trackingNum)}`;
                               window.open(naverSearchUrl, '_blank');
@@ -299,7 +299,7 @@ const MyPage: React.FC = () => {
                             className="tracking-btn-trigger"
                             title="클릭하시면 네이버 실시간 배송조회 페이지가 새 창으로 열립니다"
                           >
-                            <span>{order.courierName || '우체국택배'}</span>
+                            <span>{order.courierName || 'CJ대한통운'}</span>
                             <span className="tracking-num-highlight">{order.trackingNumber}</span>
                           </div>
                         ) : (
