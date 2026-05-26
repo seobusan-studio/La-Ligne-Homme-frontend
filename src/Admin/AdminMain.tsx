@@ -76,11 +76,16 @@ const AdminMain: React.FC = () => {
     dailySales: {}
   });
 
+  // 매출 정산 뷰 모드 (일/월/년) + 검색 필터
+  const [salesViewMode, setSalesViewMode] = useState<'daily' | 'monthly' | 'yearly'>('daily');
+  const [salesSearchFrom, setSalesSearchFrom] = useState('');
+  const [salesSearchTo, setSalesSearchTo] = useState('');
+
   // 현재 어떤 주문 번호의 상세 내역이 펼쳐져 있는지 기억하는 상태창
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
 
   // 상세 목록 내부 인풋 필드 제어용 실시간 운송장 데이터 상태창
-  const [courierNameInput, setCourierNameInput] = useState<string>('');
+  const [courierNameInput, setCourierNameInput] = useState<string>('CJ대한통운');
   const [trackingNumberInput, setTrackingNumberInput] = useState<string>('');
 
   // 복수의 주문 알림 패킷을 유실 없이 적체 보관하기 위한 배열형 상태창
@@ -555,7 +560,7 @@ const AdminMain: React.FC = () => {
       setExpandedOrderId(null);
     } else {
       const targetOrder = orders.find(o => (o.id || o.orderId) === orderId);
-      setCourierNameInput(targetOrder?.courierName || '');
+      setCourierNameInput(targetOrder?.courierName === 'CJ대한통운' ? targetOrder?.courierName : 'CJ대한통운');
       setTrackingNumberInput(targetOrder?.trackingNumber || '');
       setExpandedOrderId(orderId);
     }
@@ -1012,7 +1017,22 @@ const AdminMain: React.FC = () => {
                       <tr>
                         {/* 🌟 [교정 대개혁 완결] 관리자도 마이페이지 및 카톡 문자 원장과 일치하게 orderNumber를 최우선 표출합니다. */}
                         <td style={{ fontWeight: '600', color: '#8f8576' }}>{order.orderNumber || order.id || order.orderId}</td>
-                        <td>{order.customer || order.customerName || '비회원'}</td>
+                        <td>
+                          {(() => {
+                            const memberName = order.customer || order.customerName;
+                            const guestName = order.guestName || order.receiverName || order.recipientName || order.ordererName;
+                            const name = memberName || guestName;
+                            const isGuest = !memberName;
+                            return (
+                              <span>
+                                <span style={{ color: '#fff' }}>{name || '-'}</span>
+                                {isGuest && (
+                                  <span style={{ fontSize: '10px', color: '#8f8576', marginLeft: '5px', padding: '1px 5px', border: '1px solid #444', borderRadius: '2px' }}>비회원</span>
+                                )}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td>{order.date || order.createdAt || '-'}</td>
                         <td className="price-cell">₩ {(order.price || order.totalPrice || 0).toLocaleString()}</td>
                         <td>
@@ -1074,12 +1094,7 @@ const AdminMain: React.FC = () => {
                                         height: '35px'
                                       }}
                                     >
-                                      <option value="">-- 국내 배송 택배사 선택 --</option>
-                                      <option value="우체국택배">우체국택배</option>
                                       <option value="CJ대한통운">CJ대한통운</option>
-                                      <option value="한진택배">한진택배</option>
-                                      <option value="로젠택배">로젠택배</option>
-                                      <option value="롯데택배">롯데택배</option>
                                     </select>
                                   </div>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
@@ -1268,7 +1283,60 @@ const AdminMain: React.FC = () => {
           </section>
         );
 
-      case 'sales':
+      case 'sales': {
+        const rawEntries = Object.entries(stats.dailySales || {});
+
+        // 일/월/년 그룹핑
+        const groupedSalesEntries = (() => {
+          if (salesViewMode === 'daily') {
+            return rawEntries.sort((a, b) => b[0].localeCompare(a[0]));
+          }
+          const grouped: Record<string, number> = {};
+          rawEntries.forEach(([date, amount]) => {
+            const key = salesViewMode === 'monthly' ? date.substring(0, 7) : date.substring(0, 4);
+            grouped[key] = (grouped[key] || 0) + Number(amount);
+          });
+          return Object.entries(grouped).sort((a, b) => b[0].localeCompare(a[0]));
+        })();
+
+        // 검색 필터 적용 (from ~ to 범위)
+        const filteredSalesEntries = groupedSalesEntries.filter(([key]) => {
+          if (salesSearchFrom && key < salesSearchFrom) return false;
+          if (salesSearchTo && key > salesSearchTo) return false;
+          return true;
+        });
+
+        // 검색 구간 합산
+        const filteredTotal = filteredSalesEntries.reduce((sum, [, amount]) => sum + Number(amount), 0);
+
+        const viewLabel = { daily: '일', monthly: '월', yearly: '연' }[salesViewMode];
+        const colLabel = { daily: '날짜', monthly: '월', yearly: '연도' }[salesViewMode];
+        const inputType = { daily: 'date', monthly: 'month', yearly: 'number' }[salesViewMode];
+
+        const tabStyle = (mode: string) => ({
+          padding: '8px 20px',
+          fontSize: '13px',
+          fontWeight: '600' as const,
+          cursor: 'pointer',
+          border: '1px solid',
+          borderRadius: '4px',
+          transition: 'all 0.2s',
+          background: salesViewMode === mode ? '#c5a880' : '#1a1a1a',
+          color: salesViewMode === mode ? '#000' : '#888',
+          borderColor: salesViewMode === mode ? '#c5a880' : '#333',
+        });
+
+        const inputStyle: React.CSSProperties = {
+          background: '#0d0d0d',
+          border: '1px solid #333',
+          color: '#fff',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          fontSize: '13px',
+          colorScheme: 'dark',
+          width: salesViewMode === 'yearly' ? '90px' : '150px',
+        };
+
         return (
           <section className="dashboard-detail-section">
             <h2>매출 정산 관리</h2>
@@ -1286,31 +1354,85 @@ const AdminMain: React.FC = () => {
                 <p className="card-value profit">₩ {(stats.netProfit ?? 0).toLocaleString()}</p>
               </div>
             </div>
-            
+
             <div className="admin-table-box" style={{ background: '#111', padding: '20px', borderRadius: '8px' }}>
-              <h3 style={{ color: '#fff', fontSize: '15px', marginBottom: '15px' }}>일별 매출 현황</h3>
+              {/* 상단 헤더: 제목 + 탭 */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ color: '#fff', fontSize: '15px', margin: 0 }}>{viewLabel}별 매출 현황</h3>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="button" style={tabStyle('daily')} onClick={() => { setSalesViewMode('daily'); setSalesSearchFrom(''); setSalesSearchTo(''); }}>일별</button>
+                  <button type="button" style={tabStyle('monthly')} onClick={() => { setSalesViewMode('monthly'); setSalesSearchFrom(''); setSalesSearchTo(''); }}>월별</button>
+                  <button type="button" style={tabStyle('yearly')} onClick={() => { setSalesViewMode('yearly'); setSalesSearchFrom(''); setSalesSearchTo(''); }}>연별</button>
+                </div>
+              </div>
+
+              {/* 검색 필터 바 */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '18px', padding: '14px', background: '#141414', borderRadius: '6px', border: '1px solid #222' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', color: '#8f8576', fontWeight: '600' }}>시작 {colLabel}</label>
+                  <input
+                    type={inputType}
+                    value={salesSearchFrom}
+                    onChange={(e) => setSalesSearchFrom(e.target.value)}
+                    style={inputStyle}
+                    placeholder={salesViewMode === 'yearly' ? '예) 2024' : undefined}
+                    min={salesViewMode === 'yearly' ? '2000' : undefined}
+                    max={salesViewMode === 'yearly' ? '2099' : undefined}
+                  />
+                </div>
+                <span style={{ color: '#555', paddingBottom: '8px' }}>~</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', color: '#8f8576', fontWeight: '600' }}>종료 {colLabel}</label>
+                  <input
+                    type={inputType}
+                    value={salesSearchTo}
+                    onChange={(e) => setSalesSearchTo(e.target.value)}
+                    style={inputStyle}
+                    placeholder={salesViewMode === 'yearly' ? '예) 2025' : undefined}
+                    min={salesViewMode === 'yearly' ? '2000' : undefined}
+                    max={salesViewMode === 'yearly' ? '2099' : undefined}
+                  />
+                </div>
+                {(salesSearchFrom || salesSearchTo) && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => { setSalesSearchFrom(''); setSalesSearchTo(''); }}
+                      style={{ padding: '8px 14px', background: '#222', color: '#bbb', border: '1px solid #333', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
+                    >
+                      초기화
+                    </button>
+                    <div style={{ marginLeft: 'auto', padding: '8px 16px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', fontSize: '13px' }}>
+                      <span style={{ color: '#8f8576', marginRight: '8px' }}>구간 합계</span>
+                      <span style={{ color: '#c5a880', fontWeight: '700' }}>₩ {filteredTotal.toLocaleString()}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>날짜</th>
+                    <th>{colLabel}</th>
                     <th>매출액</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(stats.dailySales || {}).sort((a,b) => b[0].localeCompare(a[0])).map(([date, amount]) => (
-                    <tr key={date}>
-                      <td>{date}</td>
+                  {filteredSalesEntries.map(([key, amount]) => (
+                    <tr key={key}>
+                      <td>{key}</td>
                       <td className="price-cell">₩ {Number(amount).toLocaleString()}</td>
                     </tr>
                   ))}
-                  {Object.keys(stats.dailySales || {}).length === 0 && (
-                    <tr><td colSpan={2} style={{ textAlign: 'center', color: '#555' }}>데이터가 없습니다.</td></tr>
+                  {filteredSalesEntries.length === 0 && (
+                    <tr><td colSpan={2} style={{ textAlign: 'center', color: '#555' }}>조회 조건에 해당하는 데이터가 없습니다.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
           </section>
         );
+      }
 
       case 'marketing':
         return (

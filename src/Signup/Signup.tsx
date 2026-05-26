@@ -373,7 +373,6 @@ const Signup: React.FC = () => {
             <h2 className="visual-title">당신만을 위한<br /><em>특별한 혜택</em></h2>
             <p className="visual-desc">라 린느 옴므 멤버가 되시면 새 컬렉션 소식을 가장 먼저 받고, 다양한 멤버 전용 혜택을 누리실 수 있습니다.</p>
             <ul className="visual-perks" role="list">
-              <li className="perk-item"><span className="perk-dot" aria-hidden="true"></span>첫 구매 10% 할인 쿠폰 즉시 지급</li>
               <li className="perk-item"><span className="perk-dot" aria-hidden="true"></span>신상품 출시 사전 알림</li>
               <li className="perk-item"><span className="perk-dot" aria-hidden="true"></span>멤버 전용 시즌 세일 우선 접근</li>
               <li className="perk-item"><span className="perk-dot" aria-hidden="true"></span>룩북 & 스타일링 가이드 무료 제공</li>

@@ -4,7 +4,7 @@
 
 .main-page-box {
   /* ─── CSS Variables ─────────────────────────────── */
-  color-scheme: light dark;
+  color-scheme: light;
 
   --color-black:   #0c0c0c;
   --color-white:   #fafafa;
@@ -30,11 +30,11 @@
 
 @media (prefers-color-scheme: dark) {
   .main-page-box {
-    --color-bg:      #0c0c0c;
-    --color-bg-alt:  #141414;
-    --color-text:    #f0ede8;
-    --color-text-sub:#9a9a9a;
-    --color-border:  #2a2a2a;
+    --color-bg:      #ffffff;
+    --color-bg-alt:  #f7f5f2;
+    --color-text:    #0c0c0c;
+    --color-text-sub:#5a5a5a;
+    --color-border:  #e0e0e0;
   }
 }
 
@@ -74,7 +74,7 @@
 /* ─── Header ────────────────────────────────────── */
 .main-page-box header { position: sticky; top: 0; z-index: 100; height: var(--header-h); background: var(--color-bg); border-bottom: 1px solid transparent; transition: border-color 0.3s, backdrop-filter 0.3s, background 0.3s; }
 .main-page-box header.scrolled { border-color: var(--color-border); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(255,255,255,0.88); }
-@media (prefers-color-scheme: dark) { .main-page-box header.scrolled { background: rgba(12,12,12,0.88); } }
+@media (prefers-color-scheme: dark) { .main-page-box header.scrolled { background: rgba(255,255,255,0.88); } }
 
 .main-page-box .header-nav { display: flex; align-items: center; justify-content: space-between; height: var(--header-h); }
 .main-page-box .logo { font-family: var(--font-serif); font-size: 1.25rem; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text); }

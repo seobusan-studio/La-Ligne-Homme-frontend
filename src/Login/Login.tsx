@@ -61,41 +61,38 @@ const Login: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password })
       });
-      const result = await response.json();
 
-      // 안전하게 ApiResponse의 데이터 유무나 성공 여부 체크
+      let result: any = null;
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        const text = await response.text();
+        result = { message: text };
+      }
+
       if (response.ok && (result.success || result.data)) {
         const SESSION_KEY = 'laligne_session';
-        
-        // 백엔드가 보낸 통짜 데이터 객체(result.data) 매핑 사수
-        const userData = result.data; 
-
-        /* =========================================================================
-         * 🚨 [최종 교정 구역 - 브라우저 세션 적재 누락 가드 개통]
-         * 기존의 email, name, role 명세는 완벽히 사수하면서, 백엔드로부터 넘어온 
-         * 진본 주소(address)와 연락처(phone), 회원 식별 PK(id)까지 세션 보관소에 함께 
-         * 압착 영속화하여 결제창 자동 완성망으로 고속 우회 수혈시킵니다.
-         * ========================================================================= */
+        const userData = result.data;
         const sessionData = JSON.stringify({ 
           id: userData.id,
           email: userData.email, 
           name: userData.name,
           role: userData.role,
-          phone: userData.phone,     // 🌟 [최종 수혈] 세션 락다운 방지용 연락처 꼽기!
-          address: userData.address   // 🌟 [최종 수혈] 세션 락다운 방지용 주소 꼽기!
+          phone: userData.phone,
+          address: userData.address
         });
-        
         if (rememberMe) localStorage.setItem(SESSION_KEY, sessionData);
         else sessionStorage.setItem(SESSION_KEY, sessionData);
-        
         navigate('/');
       } else {
-        // 로그인 실패 시 에러 모션 (오리지널 로직 그대로)
+        console.error('Login failed:', response.status, result);
         setAuthError(true);
         setEmailError(true);
         setPasswordError(true);
       }
     } catch (err) {
+      console.error('Login request error:', err);
       alert('백엔드 서버 연동 상태를 체크하십시오.');
     }
   };

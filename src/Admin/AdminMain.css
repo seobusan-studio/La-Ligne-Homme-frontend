@@ -1,4 +1,4 @@
-:root {
+.admin-dashboard-container {
   --admin-bg: #0a0a0a;
   --admin-sidebar-bg: #000000;
   --admin-card-bg: #121212;
@@ -8,14 +8,19 @@
   --admin-gold: #c5a880;
   --admin-red: #d9534f;
   --admin-blue: #4a90e2;
-}
 
-.admin-dashboard-container {
+  color-scheme: dark;
   display: flex;
   min-height: 100vh;
   background-color: var(--admin-bg);
   color: var(--admin-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.admin-dashboard-container *,
+.admin-dashboard-container *::before,
+.admin-dashboard-container *::after {
+  color-scheme: dark;
 }
 
 .admin-sidebar {
@@ -98,7 +103,7 @@
   padding-bottom: 25px;
 }
 
-.admin-content-header h1 { font-size: 1.6rem; font-weight: 600; margin: 0 0 6px 0; }
+.admin-content-header h1 { font-size: 1.6rem; font-weight: 600; margin: 0 0 6px 0; color: var(--admin-text); }
 .admin-content-header .subtitle { color: var(--admin-text-sub); margin: 0; font-size: 0.85rem; }
 
 .admin-profile {
@@ -119,7 +124,7 @@
 
 .stats-card { background-color: var(--admin-card-bg); border: 1px solid var(--admin-border); border-radius: 4px; padding: 22px; }
 .stats-card.highlight { border-color: #33281c; background: linear-gradient(145deg, #121212 0%, #1a1510 100%); }
-.stats-card h3 { font-size: 0.8rem; color: var(--admin-text-sub); margin: 0 0 12px 0; font-weight: 400; }
+.stats-card h3 { font-size: 0.8rem; color: var(--admin-text-sub) !important; margin: 0 0 12px 0; font-weight: 400; }
 .card-value { font-size: 1.5rem; font-weight: 700; margin: 0 0 12px 0; }
 .card-value.refund { color: var(--admin-red); }
 .card-value.profit { color: var(--admin-gold); }
@@ -127,8 +132,8 @@
 
 .dashboard-detail-section { background-color: var(--admin-card-bg); border: 1px solid var(--admin-border); border-radius: 4px; padding: 30px; margin-bottom: 30px; }
 .section-header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.dashboard-detail-section h2 { font-size: 1.05rem; margin: 0 0 20px 0; font-weight: 500; letter-spacing: -0.01em; }
-.section-header-box h2 { margin: 0; }
+.dashboard-detail-section h2 { font-size: 1.05rem; margin: 0 0 20px 0; font-weight: 500; letter-spacing: -0.01em; color: var(--admin-text); }
+.section-header-box h2 { margin: 0; color: var(--admin-text); }
 
 .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
 .admin-table th { padding: 12px 14px; border-bottom: 1px solid var(--admin-border); color: var(--admin-text-sub); font-size: 0.8rem; font-weight: 400; }
@@ -176,7 +181,7 @@
   margin-bottom: 30px;
 }
 
-.wide-panel-header h2 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+.wide-panel-header h2 { font-size: 1.25rem; font-weight: 600; margin: 0; color: var(--admin-text); }
 .wide-header-actions { display: flex; gap: 12px; }
 
 .btn-admin-cancel {

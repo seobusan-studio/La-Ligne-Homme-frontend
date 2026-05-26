@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Main.css';
+import SpeedDial from '../components/SpeedDial/SpeedDial';
 
 interface Product {
   id: number;
@@ -34,12 +35,8 @@ const Main: React.FC = () => {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeCategory, setActiveCategory] = useState('전체');
-  const [newsletterPlaceholder, setNewsletterPlaceholder] = useState('이메일 주소를 입력하세요');
-
   // 🌟 [신설 핵심 상태] 백엔드 DB에서 실시간으로 긁어올 동적 카테고리 수혈단
   const [categories, setCategories] = useState<any[]>([]);
-
-  const formRef = useRef<HTMLFormElement>(null);
 
   // 1. 로그인 세션 및 상품 데이터 로드 + 동적 카테고리 실시간 동기화
   useEffect(() => {
@@ -111,20 +108,6 @@ const Main: React.FC = () => {
     window.location.reload();
   };
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formRef.current) {
-      const input = formRef.current.querySelector('input[type="email"]') as HTMLInputElement;
-      if (input && input.value && input.validity.valid) {
-        input.value = '';
-        setNewsletterPlaceholder('구독해 주셔서 감사합니다!');
-        setTimeout(() => {
-          setNewsletterPlaceholder('이메일 주소를 입력하세요');
-        }, 3000);
-      }
-    }
-  };
-
   const scrollToSection = (id: string) => {
     setIsNavOpen(false);
     const element = document.getElementById(id);
@@ -147,7 +130,6 @@ const Main: React.FC = () => {
       <nav className={`mobile-nav ${isNavOpen ? 'open' : ''}`} id="mobile-nav" aria-label="모바일 메뉴" aria-hidden={!isNavOpen}>
         <button className="mobile-nav-close" id="mobile-nav-close" onClick={() => setIsNavOpen(false)} aria-label="메뉴 닫기">&#xd7;</button>
         <a href="#collection" onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>컬렉션</a>
-        <a href="#lookbook" onClick={(e) => { e.preventDefault(); scrollToSection('lookbook'); }}>룩북</a>
         <a href="#brand" onClick={(e) => { e.preventDefault(); scrollToSection('brand'); }}>브랜드</a>
         <a href="#contact" onClick={(e) => { e.preventDefault(); scrollToSection('contact'); }}>문의</a>
       </nav>
@@ -162,7 +144,6 @@ const Main: React.FC = () => {
 
           <ul className="nav-links" role="list">
             <li><a href="#collection" onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>컬렉션</a></li>
-            <li><a href="#lookbook" onClick={(e) => { e.preventDefault(); scrollToSection('lookbook'); }}>룩북</a></li>
             <li><a href="#brand" onClick={(e) => { e.preventDefault(); scrollToSection('brand'); }}>브랜드</a></li>
             <li><a href="#faq" onClick={(e) => { e.preventDefault(); scrollToSection('faq'); }}>문의</a></li>
           </ul>
@@ -270,9 +251,8 @@ const Main: React.FC = () => {
           <div className="container">
             <div className="collection-header">
               <div>
-                <p className="section-label fade-in">2025 Spring / Summer</p>
                 <h2 id="collection-heading" className="section-title fade-in fade-in-delay-1">
-                  New Arrivals
+                  신상품
                 </h2>
               </div>
               <button className="btn-secondary fade-in">전체 보기</button>
@@ -467,30 +447,6 @@ const Main: React.FC = () => {
           </div>
         </section>
 
-        {/* Lookbook */}
-        <section className="lookbook" id="lookbook" aria-labelledby="lookbook-heading">
-          <div className="container">
-            <p className="section-label fade-in">2025 S/S Lookbook</p>
-            <h2 id="lookbook-heading" className="section-title fade-in fade-in-delay-1">
-              The Look
-            </h2>
-          </div>
-          <div className="lookbook-strip" role="list" aria-label="룩북 이미지 모음">
-            <div className="look-item fade-in" role="listitem" tabIndex={0} aria-label="Look 01">
-              <div className="look-inner" style={{ background: '#d4cec7' }}></div>
-            </div>
-            <div className="look-item fade-in fade-in-delay-1" role="listitem" tabIndex={0} aria-label="Look 02">
-              <div className="look-inner" style={{ background: '#2a2a2a' }}></div>
-            </div>
-            <div className="look-item fade-in fade-in-delay-2" role="listitem" tabIndex={0} aria-label="Look 03">
-              <div className="look-inner" style={{ background: '#c8bfaf' }}></div>
-            </div>
-            <div className="look-item fade-in" role="listitem" tabIndex={0} aria-label="Look 04">
-              <div className="look-inner" style={{ background: '#1c1c1c' }}></div>
-            </div>
-          </div>
-        </section>
-
         {/* FAQ */}
         <section className="faq" id="faq" aria-labelledby="faq-heading">
           <div className="container">
@@ -546,36 +502,6 @@ const Main: React.FC = () => {
           </div>
         </section>
 
-        {/* Newsletter */}
-        <section className="newsletter" aria-labelledby="newsletter-heading">
-          <div className="container">
-            <p className="section-label fade-in">Newsletter</p>
-            <h2 id="newsletter-heading" className="section-title fade-in fade-in-delay-1">
-              새 컬렉션을 가장 먼저<br />만나보세요
-            </h2>
-            <p className="newsletter-desc fade-in fade-in-delay-2">
-              신상품, 룩북, brand 이야기를 뉴스레터로 전달합니다.
-              구독자에게는 첫 구매 시 10% 할인 혜택을 드립니다.
-            </p>
-            <form ref={formRef} className="newsletter-form fade-in fade-in-delay-2" onSubmit={handleNewsletterSubmit} noValidate>
-              <label htmlFor="email-input" className="visually-hidden">이메일 주소</label>
-              <input
-                type="email"
-                id="email-input"
-                name="email"
-                className="newsletter-input"
-                placeholder={newsletterPlaceholder}
-                autoComplete="email"
-                required
-              />
-              <button type="submit" className="newsletter-btn">구독하기</button>
-            </form>
-            <p className="newsletter-notice fade-in">
-              개인정보 처리방침에 동의하며, 언제든지 수신을 거부할 수 있습니다.
-            </p>
-          </div>
-        </section>
-
         {/* Final CTA */}
         <section className="final-cta" id="contact" aria-labelledby="final-cta-heading">
           <div className="container">
@@ -612,14 +538,13 @@ const Main: React.FC = () => {
                 <li><a href="#collection" onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>티셔츠 / 셔츠</a></li>
                 <li><a href="#collection" onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>가디건 / 니트</a></li>
                 <li><a href="#collection" onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>팬츠</a></li>
-                <li><a href="#lookbook" onClick={(e) => { e.preventDefault(); scrollToSection('lookbook'); }}>룩북</a></li>
               </ul>
             </div>
             <div className="footer-col">
               <h4>brand</h4>
               <ul>
                 <li><a href="#brand" onClick={(e) => { e.preventDefault(); scrollToSection('brand'); }}>브랜드 스토리</a></li>
-                <li><a href="#lookbook" onClick={(e) => { e.preventDefault(); scrollToSection('lookbook'); }}>컬렉션</a></li>
+                <li><a href="#collection" onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>컬렉션</a></li>
                 <li><a href="#faq" onClick={(e) => { e.preventDefault(); scrollToSection('faq'); }}>자주 묻는 질문</a></li>
                 <li><a href="mailto:contact@lalignehomme.com">고객 문의</a></li>
               </ul>
@@ -647,7 +572,7 @@ const Main: React.FC = () => {
               <span><strong>무통장입금</strong> 국민은행 473801-04-176193 (제니스)</span>
               <span><strong>상담시간</strong> 오전 10:00 ~ 오후 4:00</span>
             </div>
-            <a href="https://open.kakao.com/o/spCfHpui" target="_blank" rel="noopener noreferrer" className="footer-kakao">
+            <a href="https://pf.kakao.com/_xdfQsX" target="_blank" rel="noopener noreferrer" className="footer-kakao">
               카카오 오픈채팅 상담 &rarr;
             </a>
           </div>
@@ -656,12 +581,13 @@ const Main: React.FC = () => {
               &copy; 2025 La Ligne Hommes. All rights reserved.
             </p>
             <nav className="footer-legal-links" aria-label="법적 링크">
-              <a href="#">개인정보 처리방침</a>
-              <a href="#">이용약관</a>
+              <a href="https://www.law.go.kr/LSW/lsInfoP.do?lsId=011357&ancYnChk=0#0000" target="_blank" rel="noopener noreferrer">개인정보 처리방침</a>
+              <a href="/terms" target="_blank" rel="noopener noreferrer">이용약관</a>
             </nav>
           </div>
         </div>
       </footer>
+      <SpeedDial />
     </div>
   );
 };

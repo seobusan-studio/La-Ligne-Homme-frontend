@@ -3,7 +3,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap');
 
 .login-page-box {
-  color-scheme: light dark;
+  color-scheme: light;
   --color-black:   #0c0c0c;
   --color-white:   #fafafa;
   --color-gold:    #b89a6a;
@@ -35,11 +35,11 @@
 
 @media (prefers-color-scheme: dark) {
   .login-page-box {
-    --color-bg:      #0c0c0c;
-    --color-bg-alt:  #141414;
-    --color-text:    #f0ede8;
-    --color-text-sub:#9a9a9a;
-    --color-border:  #2a2a2a;
+    --color-bg:      #ffffff;
+    --color-bg-alt:  #f7f5f2;
+    --color-text:    #0c0c0c;
+    --color-text-sub:#5a5a5a;
+    --color-border:  #e0e0e0;
   }
 }
 
