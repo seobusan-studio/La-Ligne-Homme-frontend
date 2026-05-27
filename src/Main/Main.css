@@ -194,7 +194,9 @@
 
 /* ─── Footer ─────────────────────────────────────── */
 .main-page-box footer { background: #0c0c0c; color: #f0ede8; padding: 4rem 0 2rem; }
-.main-page-box .footer-top { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 4rem; }
+.main-page-box .footer-top { display: flex; flex-wrap: wrap; gap: 3rem; margin-bottom: 4rem; justify-content: space-between; align-items: flex-start; }
+.main-page-box .footer-brand { flex: 1.4; min-width: 260px; }
+.main-page-box .footer-col { flex: 1; min-width: 140px; }
 .main-page-box .footer-brand .logo { color: var(--color-bg); margin-bottom: 1rem; display: inline-block; }
 .main-page-box .footer-brand .logo span { color: rgba(255,255,255,0.4); }
 .main-page-box .footer-tagline { font-size: 0.8rem; font-weight: 300; line-height: 1.8; color: rgba(255,255,255,0.45); max-width: 28ch; margin-top: 0.5rem; }
@@ -228,7 +230,7 @@
   .main-page-box .hero-content { padding: 4rem 2rem; }
   .main-page-box .editorial { grid-template-columns: 1fr; }
   .main-page-box .editorial-content { padding: 4rem 2rem; }
-  .main-page-box .footer-top { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+  .main-page-box .footer-top { gap: 2.5rem; }
 }
 
 @media (max-width: 768px) {
@@ -241,7 +243,7 @@
   .main-page-box .values-grid { grid-template-columns: 1fr; gap: 2.5rem; }
   .main-page-box .newsletter-form { flex-direction: column; }
   .main-page-box .newsletter-input { border-right: 1px solid rgba(255,255,255,0.25); }
-  .main-page-box .footer-top { grid-template-columns: 1fr 1fr; }
+  .main-page-box .footer-top { }
   .main-page-box .footer-bottom { flex-direction: column; text-align: center; }
   .main-page-box .editorial-content { padding: 3rem 1.5rem; }
 }
@@ -249,7 +251,7 @@
 @media (max-width: 480px) {
   .main-page-box .container { padding: 0 1.25rem; }
   .main-page-box .collection-grid { grid-template-columns: 1fr; }
-  .main-page-box .footer-top { grid-template-columns: 1fr; }
+  .main-page-box .footer-top { }
   .main-page-box .hero-content { padding: 3rem 1.25rem; }
 }
 

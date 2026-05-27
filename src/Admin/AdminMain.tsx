@@ -25,7 +25,7 @@ const AdminMain: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
   // 관리자가 카테고리를 실시간 신설/제거하기 위한 어드민 인풋 필드
   const [newCatName, setNewCatName] = useState('');
-  const [newCatOrder, setNewCatOrder] = useState('1');
+  const [draggedCatIndex, setDraggedCatIndex] = useState<number | null>(null);
 
   // 어드민 상품 리스트 제어용 실시간 서칭 키워드 및 카테고리 필터값
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -40,7 +40,7 @@ const AdminMain: React.FC = () => {
 
   // 첫 줄이 FREE로 오염되는 것을 방지하기 위해 빈 문자열("")로 담백하게 스타트합니다.
   const [optionsList, setOptionsList] = useState<any[]>([
-    { size: '', color: '기본', extraPrice: 0, stockQuantity: 0 }
+    { id: null, size: '', color: '기본', extraPrice: 0, stockQuantity: 0 }
   ]);
 
   // 상품 탭 내부 뷰포트 전환 제어 상태
@@ -59,7 +59,7 @@ const AdminMain: React.FC = () => {
 
   // 등록 폼 입력 상태 필드
   const [prodName, setProdName] = useState('');
-  const [prodCategory, setProdCategory] = useState('아우터');
+  const [prodCategory, setProdCategory] = useState('');
   const [prodPrice, setProdPrice] = useState('');
   const [prodStock, setProdStock] = useState(''); 
   const [prodDesc, setProdDesc] = useState('');
@@ -95,13 +95,35 @@ const AdminMain: React.FC = () => {
   const knownOrderIdsRef = useRef<Set<number>>(new Set());
   const isFirstLoadRef = useRef<boolean>(true);
 
+  // 🌟 [배너 전용 상태창]
+  const [heroBanners, setHeroBanners] = useState<any[]>([]);
+  const [editorialBanners, setEditorialBanners] = useState<any[]>([]);
+  const [dragActiveHero, setDragActiveHero] = useState<boolean>(false);
+  const [dragActiveEditorial, setDragActiveEditorial] = useState<boolean>(false);
+  const [draggedBannerIdx, setDraggedBannerIdx] = useState<number | null>(null);
+
   // 백엔드 전역 데이터 싱크로나이저 엔진
   const loadBackendData = async () => {
+    // 🌟 [보정] 배너 섹션별 멀티 인양
+    const fetchBanners = async (type: string, setter: any) => {
+      try {
+        const res = await fetch(`http://localhost:8080/api/banners/${type}`);
+        const result = await res.json();
+        if (result.success) {
+          setter(Array.isArray(result.data) ? result.data : (result.data ? [result.data] : []));
+        }
+      } catch (e) { console.log(`${type} 배너 통신 대기 중...`); setter([]); }
+    };
+
+    fetchBanners('HERO', setHeroBanners);
+    fetchBanners('EDITORIAL', setEditorialBanners);
+
     try {
       const resCat = await fetch('http://localhost:8080/api/categories');
       const resultCat = await resCat.json();
       if (resultCat.data) {
-        setCategories(resultCat.data);
+        const sortedCats = [...resultCat.data].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        setCategories(sortedCats);
         
         // 🌟 [보정 완결] 무지성 3초 초기화 로직을 철거하고, 
         // 오직 시스템 초기 로딩 시점에 prodCategory가 완전히 비어있을 때만 기본값을 주입하도록 가드선을 올립니다.
@@ -133,7 +155,6 @@ const AdminMain: React.FC = () => {
           orderCount: resultStats.data.orderCount ?? 0,
           dailySales: resultStats.data.dailySales ?? {}
         });
-        console.log("✅ 정산 데이터 로드 성공:", resultStats.data);
       }
     } catch (e) { 
       console.log('❌ 정산 통계 API 호출 실패 (서버 주소나 CORS 문제 확인):', e); 
@@ -204,7 +225,6 @@ const AdminMain: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log("⚡ [디버그] loadBackendData 호출 시도!");
     loadBackendData();
 
     const dynamicScheduler = setInterval(() => {
@@ -214,13 +234,137 @@ const AdminMain: React.FC = () => {
     return () => clearInterval(dynamicScheduler);
   }, []);
 
+  const handleDismissNotification = (keyIdToKill: string) => {
+    setNotifications(prev => prev.filter(item => item.keyId !== keyIdToKill));
+  };
+
+  const handleMultipleBannerFiles = async (files: File[], type: string) => {
+    const validImages = files.filter(file => file.type.startsWith('image/'));
+    if (validImages.length === 0) return;
+
+    console.log(`🚀 [${type} 자동 업로드 시작]`);
+    try {
+      for (const file of validImages) {
+        const formData = new FormData();
+        formData.append('image', file);
+        await fetch(`http://localhost:8080/api/banners/${type.toLowerCase()}`, { method: 'POST', body: formData });
+      }
+      alert(`${validImages.length}장의 사진이 [${type}] 섹션에 즉시 등록되었습니다.`);
+      loadBackendData();
+    } catch (e) { alert(`${type} 업로드 중 통신 장애 발생`); }
+  };
+
+  const handleDeleteBanner = async (type: string, id: number) => {
+    if (!window.confirm('선택하신 배너 이미지를 삭제하시겠습니까?')) return;
+    try {
+      const response = await fetch(`http://localhost:8080/api/banners/${type.toLowerCase()}/${id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        loadBackendData();
+      }
+    } catch (e) { alert('배너 삭제 통신 실패'); }
+  };
+
+  const onDragStartBanner = (index: number) => {
+    setDraggedBannerIdx(index);
+  };
+
+  const onDragOverBanner = (e: React.DragEvent, index: number, list: any[], setter: any) => {
+    e.preventDefault();
+    if (draggedBannerIdx === null || draggedBannerIdx === index) return;
+
+    const updated = [...list];
+    const [draggedItem] = updated.splice(draggedBannerIdx, 1);
+    updated.splice(index, 0, draggedItem);
+    
+    setter(updated);
+    setDraggedBannerIdx(index);
+  };
+
+  const onDragEndBanner = (type: string, list: any[]) => {
+    if (draggedBannerIdx !== null) {
+      const finalOrder = list.map((item, idx) => ({
+        ...item,
+        sortOrder: idx + 1
+      }));
+      
+      fetch(`http://localhost:8080/api/banners/${type.toLowerCase()}/orders`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalOrder)
+      })
+      .then(res => {
+        if (res.ok) {
+          console.log(`✅ ${type} 배너 순서 영속화 성공`);
+          loadBackendData();
+        }
+      })
+      .catch(e => console.error('순서 저장 통신 실패:', e));
+    }
+    setDraggedBannerIdx(null);
+  };
+
+
+  // 카테고리 순서 일괄 업데이트 엔진
+  const updateCategoryOrders = async (updatedCategories: any[]) => {
+    try {
+      const updatePromises = updatedCategories.map((cat, index) => {
+        return fetch(`http://localhost:8080/api/categories/${cat.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: cat.name, sortOrder: index + 1 })
+        });
+      });
+      await Promise.all(updatePromises);
+      loadBackendData();
+    } catch (e) {
+      console.error('카테고리 순서 업데이트 실패:', e);
+    }
+  };
+
+  const onDragStartCategory = (index: number) => {
+    setDraggedCatIndex(index);
+  };
+
+  const onDragOverCategory = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedCatIndex === null || draggedCatIndex === index) return;
+
+    // 드래그 중 실시간 위치 스왑 로직 (UI 피드백 전용)
+    const updatedCats = [...categories];
+    const [draggedItem] = updatedCats.splice(draggedCatIndex, 1);
+    updatedCats.splice(index, 0, draggedItem);
+    
+    setCategories(updatedCats);
+    setDraggedCatIndex(index);
+  };
+
+  const onDragEndCategory = () => {
+    if (draggedCatIndex !== null) {
+      // 드래그 종료 시 최종 상태를 기반으로 백엔드 순서값(sortOrder) 일괄 동기화
+      const finalCats = categories.map((cat, idx) => ({
+        ...cat,
+        sortOrder: idx + 1
+      }));
+      updateCategoryOrders(finalCats);
+    }
+    setDraggedCatIndex(null);
+  };
+
   const handleCreateCategory = async () => {
     if (!newCatName) return alert('카테고리 이름을 명시해 주십시오.');
+    
+    // 현재 가장 높은 순서번호 + 1 자동 산출
+    const nextOrder = categories.length > 0 
+      ? Math.max(...categories.map(c => c.sortOrder || 0)) + 1 
+      : 1;
+
     try {
       const response = await fetch('http://localhost:8080/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCatName, sortOrder: parseInt(newCatOrder || '1', 10) })
+        body: JSON.stringify({ name: newCatName, sortOrder: nextOrder })
       });
       if (response.ok) {
         alert(`[${newCatName}] 카테고리가 실시간으로 추가 개통되었습니다.`);
@@ -231,12 +375,40 @@ const AdminMain: React.FC = () => {
   };
 
   const handleDeleteCategory = async (id: number, name: string) => {
-    if (!window.confirm(`[${name}] 카테고리를 정말 폐쇄하시겠습니까? 관련 상품 매핑에 주의하십시오.`)) return;
+    // 1. 상품 등록 여부 실시간 체크
+    const hasProducts = products.some(p => (p.categoryId || p.category_id) === id);
+    if (hasProducts) {
+      alert(`[${name}] 카테고리에 등록된 상품이 존재하여 삭제할 수 없습니다. 관련 상품의 카테고리를 먼저 변경하거나 제거해 주십시오.`);
+      return;
+    }
+
+    // 2. 주문 내역 연동 여부 정밀 체크 (정산 데이터 무결성 보호)
+    const hasOrders = orders.some(order => 
+      order.items?.some((item: any) => {
+        const product = products.find(p => p.id === (item.productId || item.product_id));
+        return product && (product.categoryId || product.category_id) === id;
+      })
+    );
+    if (hasOrders) {
+      alert(`[${name}] 카테고리 상품에 대한 주문/배송 이력이 존재합니다. 시스템 무결성을 위해 삭제가 차단되었습니다.`);
+      return;
+    }
+
+    if (!window.confirm(`[${name}] 카테고리를 정말 폐쇄하시겠습니까?`)) return;
     try {
       const response = await fetch(`http://localhost:8080/api/categories/${id}`, { method: 'DELETE' });
       if (response.ok) {
         alert('카테고리가 시스템 데이터베이스에서 안전하게 제거되었습니다.');
-        loadBackendData();
+        
+        // 삭제 후 남은 카테고리들 순서 재정렬
+        const remainingCats = [...categories]
+          .filter(c => c.id !== id);
+        
+        if (remainingCats.length > 0) {
+          updateCategoryOrders(remainingCats);
+        } else {
+          loadBackendData();
+        }
       }
     } catch (e) { alert('카테고리 삭제 백엔드 통신 실패'); }
   };
@@ -364,7 +536,7 @@ const AdminMain: React.FC = () => {
       setProdPrice(String(fullProd.price || fullProd.basePrice || fullProd.base_price || 0));
       
       const targetCat = categories.find(c => c.id === fullProd.categoryId || c.id === fullProd.category_id);
-      setProdCategory(targetCat ? targetCat.name : '아우터');
+      setProdCategory(targetCat ? targetCat.name : (categories[0]?.name || ''));
       
       const backendOptions = fullProd.options || fullProd.productOptions;
       if (backendOptions && backendOptions.length > 0) {
@@ -457,6 +629,7 @@ const AdminMain: React.FC = () => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleMultipleFiles(Array.from(e.dataTransfer.files));
     }
@@ -479,7 +652,7 @@ const AdminMain: React.FC = () => {
     setProdStock('');
     setProdStock(''); 
     setProdDesc('');
-    setOptionsList([{ size: '', color: '기본', extraPrice: 0, stockQuantity: 0 }]);
+    setOptionsList([{ id: null, size: '', color: '기본', extraPrice: 0, stockQuantity: 0 }]);
     setEditingProductId(null); 
     setProductViewMode('list');
   };
@@ -566,12 +739,82 @@ const AdminMain: React.FC = () => {
     }
   };
 
-  const handleDismissNotification = (keyIdToKill: string) => {
-    setNotifications(prev => prev.filter(item => item.keyId !== keyIdToKill));
-  };
-
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'mainpage':
+        const renderBannerManager = (title: string, type: string, list: any[], setter: any, dragActive: boolean, setDragActive: any) => (
+          <div className="wide-register-panel" style={{ marginBottom: '40px' }}>
+            <header className="wide-panel-header">
+              <h2>{title} 관리 (멀티 슬라이더)</h2>
+            </header>
+
+            <div className="wide-panel-body" style={{ gridTemplateColumns: '420px 1fr' }}>
+              <div className="wide-media-section">
+                <div 
+                  className={`wide-dropzone ${dragActive ? 'active' : ''}`}
+                  style={{ border: '2px dashed #8f8576', height: '180px' }}
+                  onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
+                  onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                  onDragLeave={() => setDragActive(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragActive(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                      handleMultipleBannerFiles(Array.from(e.dataTransfer.files), type);
+                    }
+                  }}
+                >
+                  <div className="upload-placeholder-content">
+                    <p>{title} 사진들을 드래그하여 드롭하세요</p>
+                    <label htmlFor={`${type}-upload`} className="wide-file-label">컴퓨터에서 사진 선택</label>
+                    <input id={`${type}-upload`} type="file" accept="image/*" multiple className="hidden-file-input" onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleMultipleBannerFiles(Array.from(e.target.files), type);
+                      }
+                    }} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="wide-info-section" style={{ background: '#111', padding: '20px', borderRadius: '8px', border: '1px solid #222' }}>
+                <h3 style={{ color: '#c5a880', fontSize: '14px', marginBottom: '15px' }}>🖼️ 현재 등록된 {title} 리스트 (드래그로 순서 변경)</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '10px' }}>
+                  {list.map((banner, idx) => (
+                    <div 
+                      key={banner.id} 
+                      draggable
+                      onDragStart={() => onDragStartBanner(idx)}
+                      onDragOver={(e) => onDragOverBanner(e, idx, list, setter)}
+                      onDragEnd={() => onDragEndBanner(type, list)}
+                      style={{ position: 'relative', aspectRatio: '1/1', border: '1px solid #333', borderRadius: '4px', overflow: 'hidden', cursor: 'move' }}
+                    >
+                      <img 
+                        src={(banner?.imageUrl || '').startsWith('http') ? banner.imageUrl : `http://localhost:8080${banner?.imageUrl || ''}`} 
+                        alt="배너" 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
+                      <button 
+                        onClick={() => handleDeleteBanner(type, banner.id)}
+                        style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', padding: '2px 5px', borderRadius: '3px', fontSize: '9px', cursor: 'pointer', zIndex: 30 }}
+                      >
+                        취소
+                      </button>
+                    </div>
+                  ))}
+                  {list.length === 0 && <p style={{ gridColumn: '1/-1', color: '#555', fontSize: '12px' }}>등록된 사진이 없습니다.</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+        return (
+          <div style={{ padding: '0 10px' }}>
+            {renderBannerManager('최상단 히어로', 'HERO', heroBanners, setHeroBanners, dragActiveHero, setDragActiveHero)}
+            {renderBannerManager('중간 에디토리얼', 'EDITORIAL', editorialBanners, setEditorialBanners, dragActiveEditorial, setDragActiveEditorial)}
+          </div>
+        );
+
       case 'dashboard':
         return (
           <>
@@ -658,6 +901,27 @@ const AdminMain: React.FC = () => {
                       <div className="wide-preview-main-box">
                         <img src={imagePreviews[0]} alt="메인 대표 썸네일" />
                         <span className="main-badge">대표 썸네일 (1:1 Aspect)</span>
+                        <button 
+                          type="button" 
+                          className="main-preview-cancel"
+                          onClick={() => handleDeleteImage(0, imagePreviews[0])}
+                          style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            background: 'rgba(255, 0, 0, 0.7)',
+                            color: '#fff',
+                            border: 'none',
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            zIndex: 20
+                          }}
+                        >
+                          현재 사진 취소
+                        </button>
                       </div>
                     ) : (
                       <div className="upload-placeholder-content">
@@ -665,11 +929,24 @@ const AdminMain: React.FC = () => {
                           <path fill="currentColor" d="M19.5 4.5h-15a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3Zm-15 1.5h15a1.5 1.5 0 0 1 1.5 1.5v5.44l-3.32-2.49a1.5 1.5 0 0 0-2 0l-4.51 3.38-2.67-1.78a1.5 1.5 0 0 0-1.83.13l-3.67 3.3V7.5A1.5 1.5 0 0 1 4.5 6Z"/>
                         </svg>
                         <p>고해상도 룩북 사진들을 드래그하여 드롭하세요</p>
-                        <label htmlFor="file-upload-input" className="wide-file-label">컴퓨터에서 복수 선택</label>
+                        <label htmlFor="file-upload-input" className="wide-file-label">컴퓨터에서 사진 등록</label>
                         <input id="file-upload-input" type="file" accept="image/*" multiple className="hidden-file-input" onChange={handleFileChange} />
                       </div>
                     )}
                   </div>
+
+                  {imagePreviews.length > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                      <span style={{ fontSize: '12px', color: '#888' }}>* 드래그하여 순서 변경 가능</span>
+                      <button 
+                        type="button" 
+                        onClick={() => { if(window.confirm('선택된 모든 사진을 등록 취소하시겠습니까?')) { setImageFiles([]); setMidnightPreviews([]); } }}
+                        style={{ background: '#331111', color: '#ffaaaa', border: '1px solid #552222', padding: '5px 12px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                      >
+                        사진 전체 취소
+                      </button>
+                    </div>
+                  )}
 
                   {imagePreviews.length > 0 && (
                     <div className="wide-thumbs-grid">
@@ -695,30 +972,29 @@ const AdminMain: React.FC = () => {
                             className="thumb-delete-btn"
                             style={{
                               position: 'absolute',
-                              top: '4px',
-                              right: '4px',
-                              background: 'rgba(20, 20, 20, 0.85)',
-                              color: '#ffcccc',
-                              border: '1px solid #444',
-                              borderRadius: '50%',
-                              width: '20px',
-                              height: '20px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '13px',
+                              bottom: '0',
+                              left: '0',
+                              right: '0',
+                              background: 'rgba(0, 0, 0, 0.7)',
+                              color: '#fff',
+                              border: 'none',
+                              padding: '2px 0',
+                              fontSize: '10px',
                               fontWeight: '600',
                               cursor: 'pointer',
                               zIndex: 10,
-                              transition: 'all 0.2s'
+                              textAlign: 'center'
                             }}
-                            title="사진 제외하기"
+                            title="사진 취소"
                           >
-                            &times;
+                            취소
                           </button>
                         </div>
                       ))}
-                      <label htmlFor="file-upload-more" className="wide-thumb-add-card">+</label>
+                      <label htmlFor="file-upload-more" className="wide-thumb-add-card" style={{ fontSize: '11px', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '18px' }}>+</span>
+                        사진 추가
+                      </label>
                       <input id="file-upload-more" type="file" accept="image/*" multiple className="hidden-file-input" onChange={handleFileChange} />
                     </div>
                   )}
@@ -801,16 +1077,34 @@ const AdminMain: React.FC = () => {
         return (
           <section className="dashboard-detail-section">
             <div className="category-admin-board" style={{ background: '#141414', padding: '18px', borderRadius: '8px', marginBottom: '25px', border: '1px solid #262626' }}>
-              <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', letterSpacing: '0.03em', color: '#fff', textTransform: 'uppercase' }}>🔧 실시간 동적 카테고리 제어 보드</h3>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', letterSpacing: '0.03em', color: '#fff', textTransform: 'uppercase' }}>🔧 실시간 동적 카테고리 제어 보드 (드래그로 순서 변경)</h3>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
                 <input type="text" placeholder="새 카테고리명 (예: 신발, 모자)" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} style={{ background: '#222', border: '1px solid #333', color: '#fff', padding: '8px 12px', borderRadius: '4px', width: '220px' }} />
-                <input type="number" placeholder="전시 순서 (숫)" value={newCatOrder} onChange={(e) => setNewCatOrder(e.target.value)} style={{ background: '#222', border: '1px solid #333', color: '#fff', padding: '8px 12px', borderRadius: '4px', width: '110px' }} />
                 <button type="button" onClick={handleCreateCategory} style={{ background: '#fff', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '4px', fontWeight: '600', cursor: 'pointer' }}>+ 실시간 개통</button>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {categories.map((cat: any) => (
-                  <div key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#222', padding: '4px 10px', borderRadius: '20px', border: '1px solid #333', fontSize: '13px' }}>
-                    <span style={{ color: '#bbb' }}>[{cat.sortOrder}]</span>
+                {categories.map((cat: any, idx: number) => (
+                  <div 
+                    key={cat.id} 
+                    draggable
+                    onDragStart={() => onDragStartCategory(idx)}
+                    onDragOver={(e) => onDragOverCategory(e, idx)}
+                    onDragEnd={onDragEndCategory}
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      background: draggedCatIndex === idx ? '#333' : '#222', 
+                      padding: '4px 12px', 
+                      borderRadius: '20px', 
+                      border: '1px solid #333', 
+                      fontSize: '13px',
+                      cursor: 'move',
+                      userSelect: 'none',
+                      transition: 'background 0.2s'
+                    }}
+                  >
+                    <span style={{ color: '#8f8576', fontWeight: 'bold' }}>{idx + 1}</span>
                     <span style={{ fontWeight: '500', color: '#fff' }}>{cat.name}</span>
                     <button type="button" onClick={() => handleDeleteCategory(cat.id, cat.name)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: '0 2px', fontWeight: 'bold' }}>×</button>
                   </div>
@@ -1527,6 +1821,7 @@ const AdminMain: React.FC = () => {
         <div className="admin-logo">La Ligne Hommes <span>Backoffice</span></div>
         <nav className="admin-menu">
           <button className={`menu-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>대시보드 홈</button>
+          <button className={`menu-item ${activeTab === 'mainpage' ? 'active' : ''}`} onClick={() => setActiveTab('mainpage')}>메인 관리</button>
           <button className={`menu-item ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>상품 관리</button>
           <button className={`menu-item ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => { setActiveTab('orders'); setOrderCurrentPage(1); }}>주문 / 배송</button>
           <button className={`menu-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>회원 관리</button>
