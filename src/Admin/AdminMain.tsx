@@ -48,6 +48,7 @@ const AdminMain: React.FC = () => {
   const [orderStartDate, setOrderStartDate] = useState('');          // 기간 검색 시작일 (YYYY-MM-DD)
   const [orderEndDate, setOrderEndDate] = useState('');              // 기간 검색 종료일 (YYYY-MM-DD)
   const [showOnlyCancelled, setShowOnlyCancelled] = useState(false); // 🌟 [신설] 주문 취소건만 보기 토글
+  const [showOnlyRequests, setShowOnlyRequests] = useState(false);   // 🌟 [신설] 취소 요청건만 보기 토글
 
   // 첫 줄이 FREE로 오염되는 것을 방지하기 위해 빈 문자열("")로 담백하게 스타트합니다.
   const [optionsList, setOptionsList] = useState<any[]>([
@@ -64,9 +65,9 @@ const AdminMain: React.FC = () => {
   // HTML5 드래그 앤 드롭 순서 변경을 위한 드래그 타겟 인덱스 추적 상태
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  // 주문 / 배송 내역 전용 페이지네이션 상태 제어 엔진 (15개 한정 규격 사수)
+  // 주문 / 배송 내역 전용 페이지네이션 상태 제어 엔진 (10개 한정 규격 사수)
   const [orderCurrentPage, setOrderCurrentPage] = useState<number>(1);
-  const ORDERS_PER_PAGE = 15;
+  const ORDERS_PER_PAGE = 10;
 
   // 등록 폼 입력 상태 필드
   const [prodName, setProdName] = useState('');
@@ -1304,11 +1305,17 @@ const AdminMain: React.FC = () => {
             return false;
           }
 
+          // 4. 🌟 [신설] 취소요청건만 보기 필터
+          if (showOnlyRequests && order.status !== '취소요청') {
+            return false;
+          }
+
           return true;
         });
 
         // 🌟 [신설] 현재 전체 원장 기준 주문 취소건수 집계
         const totalCancelledCount = orders.filter(o => o.status === '주문취소').length;
+        const totalRequestCount = orders.filter(o => o.status === '취소요청').length; // 🌟 [신설] 취소요청 건수 집계
 
         const sortedOrders = [...filteredOrders].sort((a, b) => Number(b.id || b.orderId) - Number(a.id || a.orderId));
         const totalOrderPages = Math.ceil(sortedOrders.length / ORDERS_PER_PAGE);
@@ -1468,7 +1475,7 @@ const AdminMain: React.FC = () => {
 
                       {isExpanded && (
                         <tr>
-                          <td colSpan={6} style={{ backgroundColor: '#111111', padding: '20px', border: '1px solid #222' }}>
+                          <td colSpan={7} style={{ backgroundColor: '#111111', padding: '20px', border: '1px solid #222' }}>
                             <div style={{ textAlign: 'left' }}>
                               
                               {/* 🌟 [교정완결구역] */}

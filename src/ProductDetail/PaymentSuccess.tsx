@@ -42,7 +42,10 @@ const PaymentSuccess: React.FC = () => {
           const orderRes = await fetch(`http://localhost:8080/api/orders?paymentMethod=CARD&email=${encodeURIComponent(session?.email || '')}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderRequest)
+            body: JSON.stringify({
+              ...orderRequest,
+              paymentMethod: 'CARD' // 🌟 [수혈] DTO 내 필수 필드 강제 주입
+            })
           });
 
           const orderResult = await orderRes.json();
@@ -87,21 +90,26 @@ const PaymentSuccess: React.FC = () => {
     }
   }, [paymentKey, orderId, amount, navigate]);
 
-  if (loading) return <div className="detail-loading">결제 승인을 확인 중입니다. 잠시만 기다려 주십시오...</div>;
+  if (loading) return (
+    <div className="checkout-page-container" style={{ textAlign: 'center', padding: '100px 20px' }}>
+      <div className="detail-loading">결제 승인을 확인 중입니다. 잠시만 기다려 주십시오...</div>
+    </div>
+  );
 
   return (
     <div className="checkout-page-container" style={{ textAlign: 'center', padding: '100px 20px' }}>
       <header className="checkout-header">
-        <h1 style={{ color: '#27ae60' }}>PAYMENT SUCCESS</h1>
-        <p>토스페이먼츠 안전 결제가 정상적으로 완료되었습니다.</p>
+        <h1 style={{ color: result?.success ? '#27ae60' : '#c0392b' }}>
+          {result?.success ? 'PAYMENT SUCCESS' : 'PAYMENT FAILED'}
+        </h1>
+        <p>{result?.success ? '토스페이먼츠 안전 결제가 정상적으로 완료되었습니다.' : result?.message}</p>
       </header>
 
       <div className="checkout-box" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'left' }}>
-        <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>결제 정보 확인</h3>
+        <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>주문 상세 확인</h3>
         <div style={{ padding: '20px 0', lineHeight: '2' }}>
           <p><strong>주문 번호:</strong> {orderId}</p>
-          <p><strong>결제 금액:</strong> ₩{Number(amount).toLocaleString()}</p>
-          <p><strong>결제 키:</strong> {paymentKey?.substring(0, 10)}...</p>
+          <p><strong>최종 결제 금액:</strong> ₩{Number(amount).toLocaleString()}</p>
         </div>
 
         <button 

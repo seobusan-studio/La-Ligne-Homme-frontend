@@ -63,6 +63,7 @@
   font-size: 2.5rem;
   font-weight: 300;
   letter-spacing: 0.05em;
+  color: #ffffff !important; /* 🌟 [교정] 브라우저 다크/라이트 모드 강제 반전 시에도 글씨가 보이도록 흰색 명시 고정 */
 }
 
 .all-category-tabs {
@@ -102,7 +103,7 @@
 
 .all-products-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr); /* 🌟 [교정] 한 줄에 5개씩 들어가도록 상품 크기 축소 및 배치 변경 */
   gap: 3rem 1.5rem;
 }
 

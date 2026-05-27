@@ -35,7 +35,9 @@ const Checkout: React.FC = () => {
   // 토스페이먼츠 위젯 초기화 (테스트 키 사용)
   useEffect(() => {
     if (paymentMethod === 'ONLINE_PAYMENT') {
-      const clientKey = import.meta.env.VITE_TOSS_CLIENT_KEY || "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm"; 
+      // 🚨 [결정적 교정] 결제 "위젯" SDK는 test_ck_ 가 아닌 test_gck_ 규격의 위젯 전용 키만 허용합니다.
+      // 공식 테스트 위젯 키로 교체하여 401 에러를 원천 차단합니다.
+      const clientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm"; 
       const customerKey = "ANONYMOUS"; // 비회원 대응 고유키
 
       (async () => {
@@ -196,6 +198,7 @@ const Checkout: React.FC = () => {
       receiverPhone: receiverPhone,
       deliveryAddress: finalDeliveryAddress, // 산출된 최종 주소 패킹
       deliveryMemo: deliveryMemo,
+      paymentMethod: paymentMethod === 'ONLINE_PAYMENT' ? 'CARD' : paymentMethod, // 🌟 [수혈] DTO 필수 필드 명시적 추가
       items: selectedItems.map((item: any) => ({
         optionId: item.optionId || 1,
         quantity: item.quantity,
