@@ -28,7 +28,9 @@ const Signup: React.FC = () => {
   const [verificationCode, setVerificationCode] = useState(''); // 유저가 입력한 인증번호 상태
   const [isCodeSent, setIsCodeSent] = useState(false);          // 인증번호 발송 완료 여부 스위치
   const [isVerified, setIsVerified] = useState(false);          // 휴대폰 최종 검증 완료 여부 가드선
+  const [isEmailVerified, setIsEmailVerified] = useState(false); // 📧 [수혈] 이메일 중복 확인 완료 여부 가드선
   const [smsError, setSmsError] = useState('');                // SMS 인증 에러 메시지창
+  const [emailMessage, setEmailMessage] = useState('');        // 📧 [수혈] 이메일 중복 확인 메시지창
   const [timer, setTimer] = useState(180);                      // 🌟 법적 제한 유효시간 3분 카운트다운 (180초)
 
   /* =========================================================================
@@ -146,6 +148,39 @@ const Signup: React.FC = () => {
   };
 
   /* =========================================================================
+   * 📧 [수혈] 이메일 중복 확인 엔진
+   * ========================================================================= */
+  const handleCheckEmail = async () => {
+    if (!email || !email.includes('@')) {
+      setEmailMessage('올바른 이메일 형식을 입력해 주세요.');
+      return;
+    }
+
+    try {
+      setEmailMessage('');
+      const response = await fetch('http://localhost:8080/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setIsEmailVerified(true);
+        setEmailMessage('사용 가능한 이메일입니다.');
+        setErrors(prev => ({ ...prev, email: false }));
+      } else {
+        setIsEmailVerified(false);
+        setEmailMessage(result.message || '이미 사용 중인 이메일입니다.');
+        setErrors(prev => ({ ...prev, email: true }));
+      }
+    } catch (err) {
+      setEmailMessage('서버 통신 실패. 백엔드 상태를 확인하세요.');
+    }
+  };
+
+  /* =========================================================================
    * 🚀 [법적 가드선 체결] 개인정보 수집 및 이용 동의가 완료되어야만 발송 밸브 개통
    * ========================================================================= */
   const handleRequestSmsCode = async () => {
@@ -184,7 +219,8 @@ const Signup: React.FC = () => {
         setTimer(180); // 3분 세팅 리로드
         alert('인증번호가 발송되었습니다. (테스트 모드 시 백엔드 콘솔창 확인)');
       } else {
-        setSmsError('인증번호 발송 실패. 과도한 요청이 감지되었습니다.');
+        const errorData = await response.json();
+        setSmsError(errorData.message || '인증번호 발송 실패. 과도한 요청이 감지되었습니다.');
       }
     } catch (err) {
       setSmsError('인증 서버 통신 실패. 백엔드 가동 상태를 확인하세요.');
@@ -408,8 +444,48 @@ const Signup: React.FC = () => {
                 {/* 이메일 */}
                 <div className="field">
                   <label htmlFor="email">이메일 <span className="required" aria-hidden="true">*</span></label>
-                  <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} onBlur={e => handleBlur('email', e.target.value)} className={errors.email ? 'error' : (email && email.includes('@') ? 'valid' : '')} placeholder="example@email.com" required />
-                  <span className={`field-error ${errors.email ? 'visible' : ''}`} role="alert">올바른 이메일 주소를 입력해 주세요.</span>
+                  <div className="email-input-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input 
+                      type="email" 
+                      id="email" 
+                      value={email} 
+                      onChange={e => { setEmail(e.target.value); setIsEmailVerified(false); setEmailMessage(''); }} 
+                      onBlur={e => handleBlur('email', e.target.value)} 
+                      className={errors.email ? 'error' : (isEmailVerified ? 'valid' : '')} 
+                      placeholder="example@email.com" 
+                      required 
+                      disabled={isEmailVerified}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={handleCheckEmail}
+                      disabled={isEmailVerified}
+                      style={{
+                        background: isEmailVerified ? '#555' : '#111', 
+                        color: '#fff', 
+                        border: '1px solid #8f8576', 
+                        padding: '0 16px',
+                        fontSize: '12px', 
+                        fontWeight: '600', 
+                        cursor: isEmailVerified ? 'not-allowed' : 'pointer', 
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {isEmailVerified ? '확인 완료' : '중복 확인'}
+                    </button>
+                  </div>
+                  {emailMessage && (
+                    <span style={{ 
+                      color: isEmailVerified ? '#27ae60' : '#c0392b', 
+                      fontSize: '11px', 
+                      marginTop: '4px', 
+                      display: 'block',
+                      fontWeight: '500'
+                    }}>
+                      {isEmailVerified ? '✓ ' : '✕ '}{emailMessage}
+                    </span>
+                  )}
+                  <span className={`field-error ${errors.email ? 'visible' : ''}`} role="alert">올바른 이메일 주소를 입력하고 중복 확인을 완료해 주세요.</span>
                 </div>
 
                 {/* 📱 휴대폰 번호 */}

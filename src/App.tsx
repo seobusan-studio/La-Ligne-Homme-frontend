@@ -7,12 +7,15 @@ import Login from './Login/Login';
 import Signup from './Signup/Signup'; 
 import AdminRoute from './Login/AdminRoute'; 
 import AdminMain from './Admin/AdminMain';
+import AllProducts from './Main/AllProducts'; // 🌟 [추가] 전체 상품 페이지 임포트
 import ProductDetail from './ProductDetail/ProductDetail';
 import Cart from './ProductDetail/Cart';
 import MyPage from './ProductDetail/MyPage';
 import Checkout from './ProductDetail/Checkout';
 import GuestOrderLookup from './ProductDetail/GuestOrderLookup';
 import PaymentComplete from './ProductDetail/PaymentComplete';
+import PaymentSuccess from './ProductDetail/PaymentSuccess'; // 🌟 [추가] 토스 성공 페이지
+import PaymentFail from './ProductDetail/PaymentFail'; // 🌟 [추가] 토스 실패 페이지
 import TermsPage from './Terms/TermsPage';
 
 import './App.css';
@@ -24,12 +27,15 @@ const App: React.FC = () => {
         <Route path="/" element={<Main />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/all-products" element={<AllProducts />} />
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/guest-lookup" element={<GuestOrderLookup />} />
         <Route path="/payment-complete" element={<PaymentComplete />} />
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/fail" element={<PaymentFail />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminMain />} />

@@ -62,6 +62,43 @@ const ProductDetail: React.FC = () => {
           // 🌟 [방어 가드] 유저가 서브 룩북 사진을 호버링 투어 중일 때 3초 주기로 대표 이미지가 강제 복구되는 간섭 현상 완전 차단
           if (isInitial) {
             setMainImage(loadedProduct.imageUrl || '/images/default-product.jpg');
+
+            // 🌟 [신설 - 최근 본 상품 트래킹 로직 결합]
+            const RECENT_VIEWS_KEY = 'laligne_recent_views';
+            const SESSION_KEY = 'laligne_session';
+            
+            // 세션 확인 (로그인 여부 판별)
+            const sessionRaw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+            const session = sessionRaw ? JSON.parse(sessionRaw) : null;
+
+            if (session && session.id) {
+              // 1. [로그인 회원] 백엔드 DB에 실시간 기록 적재
+              fetch('http://localhost:8080/api/products/recent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: session.id, productId: loadedProduct.id })
+              }).catch(err => console.error('DB 최근 본 상품 기록 실패:', err));
+            } else {
+              // 2. [비회원/게스트] 기존처럼 크롬 로컬스토리지에만 저장
+              const rawRecent = localStorage.getItem(RECENT_VIEWS_KEY);
+              let recentList = rawRecent ? JSON.parse(rawRecent) : [];
+
+              const newItem = {
+                id: loadedProduct.id,
+                name: loadedProduct.name,
+                price: loadedProduct.price,
+                imageUrl: loadedProduct.imageUrl
+              };
+
+              recentList = recentList.filter((item: any) => item.id !== newItem.id);
+              recentList.unshift(newItem);
+
+              if (recentList.length > 10) {
+                recentList = recentList.slice(0, 10);
+              }
+
+              localStorage.setItem(RECENT_VIEWS_KEY, JSON.stringify(recentList));
+            }
           }
         }
         if (isInitial && isMounted) setLoading(false);

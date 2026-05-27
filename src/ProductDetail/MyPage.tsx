@@ -136,6 +136,27 @@ const MyPage: React.FC = () => {
     }
   };
 
+  const handleCancelRequest = async (orderId: number) => {
+    if (!window.confirm('주문을 취소하시겠습니까? (관리자 확인 후 최종 결제 취소가 진행됩니다)')) return;
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: '취소요청' })
+      });
+      if (response.ok) {
+        alert('주문 취소 요청이 정상 접수되었습니다. 관리자 승인 후 결제가 자동 취소됩니다.');
+        // 목록 새로고침
+        window.location.reload();
+      } else {
+        alert('취소 요청 중 오류가 발생했습니다.');
+      }
+    } catch (err) {
+      alert('백엔드 서버 통신 실패');
+    }
+  };
+
   return (
     <div className="mypage-container">
       
@@ -284,9 +305,30 @@ const MyPage: React.FC = () => {
                     </td>
                     <td>
                       <div className="status-cell-flex">
-                        <span className={`status-badge ${order.status === '배송완료' ? 'delivered' : order.status === '주문취소' ? 'cancelled' : 'shipping'}`}>
+                        <span className={`status-badge ${order.status === '배송완료' ? 'delivered' : (order.status === '주문취소' || order.status === '취소요청') ? 'cancelled' : 'shipping'}`}>
                           {order.status || '주문접수'}
                         </span>
+
+                        {/* 🌟 [신설] 주문 취소 요청 버튼: 송장 번호가 없고, 아직 취소 상태가 아닐 때만 노출 */}
+                        {!order.trackingNumber && order.status !== '주문취소' && order.status !== '취소요청' && (
+                          <button 
+                            type="button"
+                            onClick={() => handleCancelRequest(order.id || order.orderId)}
+                            style={{
+                              marginLeft: '8px',
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              backgroundColor: '#fff',
+                              border: '1px solid #ddd',
+                              color: '#666',
+                              cursor: 'pointer',
+                              borderRadius: '2px',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            취소요청
+                          </button>
+                        )}
                         
                         {order.trackingNumber ? (
                           <div 
