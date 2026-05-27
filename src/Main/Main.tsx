@@ -243,7 +243,7 @@ const Main: React.FC = () => {
           <div className="container">
             <div className="collection-header">
               <h2 id="collection-heading" className="section-title fade-in fade-in-delay-1">신상품</h2>
-              <button className="btn-secondary fade-in">전체 보기</button>
+              <button className="btn-secondary fade-in" onClick={() => navigate(`/all-products?category=${activeCategory}`)}>전체 보기</button>
             </div>
             <nav className="category-nav fade-in">
               {dynamicCategoryTabs.map(cat => (
@@ -253,21 +253,107 @@ const Main: React.FC = () => {
             <div className="collection-grid" role="list">
               {products.length > 0 ? (
                 (() => {
-                  const filtered = products.filter(p => p.isVisible !== false && p.status !== 'STOPPED' && (activeCategory === '전체' || (p.categoryId || (p as any).category_id) === (categories.find(c => c.name === activeCategory)?.id || CATEGORY_ID_MAP[activeCategory])));
-                  if (filtered.length === 0) return <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-sub)', padding: '4rem 0' }}>해당 카테고리에 등록된 상품이 없습니다.</p>;
-                  return filtered.slice(0, 6).map((p, idx) => (
-                    <article key={p.id} className="product-card fade-in visible">
-                      <a href={`/product/${p.id}`} onClick={(e) => { e.preventDefault(); navigate(`/product/${p.id}`); }}>
+                  const filtered = products.filter(product => {
+                    if (product.isVisible === false || product.status === 'STOPPED') return false;
+
+                    if (activeCategory === '전체') return true;
+                    const prodCatId = product.categoryId || (product as any).category_id;
+                    if (prodCatId === undefined || prodCatId === null) return true;
+
+                    const matchedCat = categories.find(c => c.name === activeCategory);
+                    const targetId = matchedCat ? matchedCat.id : CATEGORY_ID_MAP[activeCategory];
+
+                    return prodCatId === targetId;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-sub)', padding: '4rem 0', letterSpacing: '0.05em' }}>
+                        해당 카테고리에 등록된 상품이 없습니다.
+                      </p>
+                    );
+                  }
+
+                  return filtered.slice(0, 6).map((product, idx) => (
+                    <article key={product.id} className={`product-card fade-in visible ${idx === 1 ? 'fade-in-delay-1' : idx === 2 ? 'fade-in-delay-2' : ''}`} role="listitem">
+                      <a href={`/product/${product.id}`} onClick={(e) => { e.preventDefault(); navigate(`/product/${product.id}`); }} aria-label={`${product.name} 상세 보기`}>
                         <div className="product-img-wrap">
-                          <div className="product-img-inner" style={p.imageUrl ? { backgroundImage: `url("${p.imageUrl.startsWith('http') ? p.imageUrl : `http://localhost:8080${p.imageUrl}`}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}></div>
+                          <div
+                            className={`product-img-inner prod-${(idx % 6) + 1}`}
+                            style={product.imageUrl ? { backgroundImage: `url("${product.imageUrl.startsWith('http') ? product.imageUrl : `http://localhost:8080${product.imageUrl}`}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                            role="img"
+                            aria-label={product.name}
+                          ></div>
+                          {idx === 0 && <span className="product-tag">New</span>}
+                          {idx === 2 && <span className="product-tag">Best</span>}
                         </div>
                       </a>
-                      <p className="product-name">{p.name}</p>
-                      <p className="product-price">₩ {(p.price || p.basePrice || 0).toLocaleString()}</p>
+                      <p className="product-name">{product.name}</p>
+                      <p className="product-price">₩ {(product.price || product.basePrice || 0).toLocaleString()}</p>
                     </article>
                   ));
                 })()
-              ) : <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-sub)', padding: '4rem 0' }}>상품을 불러오는 중입니다...</p>}
+              ) : (
+                <>
+                  <article className="product-card fade-in" role="listitem">
+                    <a href="#" aria-label="미니멀 린넨 코트 상세 보기">
+                      <div className="product-img-wrap">
+                        <div className="product-img-inner prod-1" role="img" aria-label="미니멀 린넨 코트"></div>
+                        <span className="product-tag">New</span>
+                      </div>
+                    </a>
+                    <p className="product-name">미니멀 린넨 코트</p>
+                    <p className="product-price">₩ 498,000</p>
+                  </article>
+                  <article className="product-card fade-in fade-in-delay-1" role="listitem">
+                    <a href="#" aria-label="슬림핏 치노 팬츠 상세 보기">
+                      <div className="product-img-wrap">
+                        <div className="product-img-inner prod-2" role="img" aria-label="슬림핏 치노 팬츠"></div>
+                      </div>
+                    </a>
+                    <p className="product-name">슬림핏 치노 팬츠</p>
+                    <p className="product-price">₩ 368,000</p>
+                  </article>
+                  <article className="product-card fade-in fade-in-delay-2" role="listitem">
+                    <a href="#" aria-label="스트라이프 셔츠 상세 보기">
+                      <div className="product-img-wrap">
+                        <div className="product-img-inner prod-3" role="img" aria-label="스트라이프 셔츠"></div>
+                        <span className="product-tag">Best</span>
+                      </div>
+                    </a>
+                    <p className="product-name">스트라이프 셔츠</p>
+                    <p className="product-price">₩ 148,000</p>
+                  </article>
+                  <article className="product-card fade-in" role="listitem">
+                    <a href="#" aria-label="브라운 로퍼 상세 보기">
+                      <div className="product-img-wrap">
+                        <div className="product-img-inner prod-4" role="img" aria-label="브라운 로퍼"></div>
+                      </div>
+                    </a>
+                    <p className="product-name">브라운 로퍼</p>
+                    <p className="product-price">₩ 218,000</p>
+                  </article>
+                  <article className="product-card fade-in fade-in-delay-1" role="listitem">
+                    <a href="#" aria-label="리젠트 블레이저 상세 보기">
+                      <div className="product-img-wrap">
+                        <div className="product-img-inner prod-5" role="img" aria-label="리젠트 블레이저"></div>
+                      </div>
+                    </a>
+                    <p className="product-name">리젠트 블레이저</p>
+                    <p className="product-price">₩ 298,000</p>
+                  </article>
+                  <article className="product-card fade-in fade-in-delay-2" role="listitem">
+                    <a href="#" aria-label="하루타 슈즈 상세 보기">
+                      <div className="product-img-wrap">
+                        <div className="product-img-inner prod-6" role="img" aria-label="하루타 슈즈"></div>
+                        <span className="product-tag">New</span>
+                      </div>
+                    </a>
+                    <p className="product-name">하루타 슈즈</p>
+                    <p className="product-price">₩ 198,000</p>
+                  </article>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -285,8 +371,13 @@ const Main: React.FC = () => {
           </div>
           <div className="editorial-content">
             <p className="editorial-kicker fade-in">The La Ligne Philosophy</p>
-            <h2 id="editorial-heading" className="editorial-title fade-in fade-in-delay-1">선 하나에 담긴<br /><em>절제의 미학</em></h2>
-            <p className="editorial-body fade-in fade-in-delay-2">과잉을 걷어낸 자리에 남는 것, 그것이 라 린느 옴므가 추구하는 스타일입니다.</p>
+            <h2 id="editorial-heading" className="editorial-title fade-in fade-in-delay-1">
+              선 하나에 담긴<br /><em>절제의 미학</em>
+            </h2>
+            <p className="editorial-body fade-in fade-in-delay-2">
+              과잉을 걷어낸 자리에 남는 것, 그것이 라 린느 옴므가 추구하는 스타일입니다.<br />
+              불필요한 장식보다는 본질에 집중함으로써 시대를 초월하는 우아함을 지향합니다.
+            </p>
             <a href="#collection" className="btn-primary" onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>컬렉션 탐색하기</a>
           </div>
         </section>
@@ -294,11 +385,33 @@ const Main: React.FC = () => {
         <section className="values" aria-labelledby="values-heading">
           <div className="container">
             <p className="section-label fade-in">Our Principles</p>
-            <h2 id="values-heading" className="section-title fade-in fade-in-delay-1">brand가 지키는 것들</h2>
+            <h2 id="values-heading" className="section-title fade-in fade-in-delay-1">
+              brand가 지키는 것들
+            </h2>
+
             <div className="values-grid">
-              <div className="value-item fade-in"><p className="value-number">01</p><h3 className="value-title">Silhouette First</h3><p className="value-body">실루엣이 먼저입니다. 몸의 선을 살리는 패턴 작업에서 모든 디자인이 시작됩니다.</p></div>
-              <div className="value-item fade-in fade-in-delay-1"><p className="value-number">02</p><h3 className="value-title">Material Integrity</h3><p className="value-body">소재의 진정성을 믿습니다. 엄선된 원단만이 라 린느 옴므의 이름을 달 수 있습니다.</p></div>
-              <div className="value-item fade-in fade-in-delay-2"><p className="value-number">03</p><h3 className="value-title">Timeless Over Trendy</h3><p className="value-body">한 시즌이 아닌 10년을 입을 수 있는 옷을 만듭니다. 시대를 초월하는 클래식함이 목표입니다.</p></div>
+              <div className="value-item fade-in">
+                <p className="value-number" aria-hidden="true">01</p>
+                <h3 className="value-title">Silhouette First</h3>
+                <p className="value-body">
+                  실루엣이 먼저입니다. 몸의 선을 따라 흐르는 테일러링은 단순한 옷 이상의 가치를 전달합니다.
+                  정교한 마무리는 언제나 완성도를 높여줍니다.
+                </p>
+              </div>
+              <div className="value-item fade-in fade-in-delay-1">
+                <p className="value-number" aria-hidden="true">02</p>
+                <h3 className="value-title">Material Integrity</h3>
+                <p className="value-body">
+                  소재의 진정성을 믿습니다. 프리미엄 코튼, 엄선된 리넨, 메리노 울 등 최고급 원단만을 고집하여 피부에 닿는 촉감부터 다릅니다.
+                </p>
+              </div>
+              <div className="value-item fade-in fade-in-delay-2">
+                <p className="value-number" aria-hidden="true">03</p>
+                <h3 className="value-title">Timeless Over Trendy</h3>
+                <p className="value-body">
+                  한 시즌이 아닌 10년을 입을 수 있는 옷을 만듭니다. 트렌드를 넘어서는 클래식함이 우리가 추구하는 목표입니다.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -307,10 +420,51 @@ const Main: React.FC = () => {
           <div className="container">
             <div className="faq-inner">
               <p className="section-label fade-in">FAQ</p>
-              <h2 id="faq-heading" className="section-title fade-in fade-in-delay-1">자주 묻는 질문</h2>
+              <h2 id="faq-heading" className="section-title fade-in fade-in-delay-1">
+                자주 묻는 질문
+              </h2>
+
               <div className="faq-list fade-in fade-in-delay-2">
-                <details><summary>배송은 얼마나 걸리나요?</summary><p>결제 확인 후 영업일 기준 2~3일 이내 출고됩니다.</p></details>
-                <details><summary>교환 및 반품이 가능한가요?</summary><p>상품 수령 후 7일 이내 가능합니다.</p></details>
+                <details>
+                  <summary>배송은 얼마나 걸리나요?</summary>
+                  <p>
+                    결제 확인 후 영업일 기준 2~3일 이내 출고됩니다.
+                    제주 및 도서 산간 지역은 추가 2일 정도 소요될 수 있습니다.
+                    주문 후 발송 완료 문자를 통해 배송 현황을 확인하실 수 있습니다.
+                  </p>
+                </details>
+                <details>
+                  <summary>교환 및 반품이 가능한가요?</summary>
+                  <p>
+                    수령 후 7일 이내 교환 및 반품 가능합니다.
+                    단, 착용 흔적이 있거나 태그가 제거된 경우에는 교환/반품이 어렵습니다.
+                    자세한 사항은 고객센터로 문의 주시기 바랍니다.
+                  </p>
+                </details>
+                <details>
+                  <summary>사이즈 문의드립니다. 정사이즈인가요?</summary>
+                  <p>
+                    대체로 정사이즈로 제작되나 제품별로 실측 사이즈가 차이 날 수 있습니다.
+                    라 린느 옴므는 슬림 실루엣을 기본으로 하므로, 
+                    넉넉한 핏을 선호하시면 한 사이즈 크게 주문하시는 것을 권장합니다.
+                    사이즈 문의는 채팅 상담을 이용해 주세요.
+                  </p>
+                </details>
+                <details>
+                  <summary>세탁 및 관리는 어떻게 하나요?</summary>
+                  <p>
+                    울 및 리넨 소재 제품은 드라이클리닝을 권장합니다.
+                    코튼 소재 제품은 손세탁 혹은 세탁망에 넣어 찬물로 세탁해 주세요.
+                    가급적 건조기 사용은 피해주시고 그늘에서 건조해 주시기 바랍니다.
+                  </p>
+                </details>
+                <details>
+                  <summary>해외 배송도 가능한가요?</summary>
+                  <p>
+                    현재 국내 배송을 우선으로 하고 있으며 해외 배송은 준비 중입니다.
+                    글로벌 런칭 예정일이 정해지면 다시 공지해 드리겠습니다.
+                  </p>
+                </details>
               </div>
             </div>
           </div>
@@ -319,7 +473,9 @@ const Main: React.FC = () => {
         <section className="final-cta" id="contact" aria-labelledby="final-cta-heading">
           <div className="container">
             <p className="section-label fade-in">La Ligne Hommes</p>
-            <h2 id="final-cta-heading" className="section-title fade-in fade-in-delay-1">당신의 선을 완성할<br /><em>시간입니다</em></h2>
+            <h2 id="final-cta-heading" className="section-title fade-in fade-in-delay-1">
+              당신의 선을 완성할<br /><em>시간입니다</em>
+            </h2>
             <div className="final-cta-actions fade-in fade-in-delay-2">
               <button className="btn-primary" onClick={() => scrollToSection('collection')}>쇼핑 시작하기</button>
               <a href="mailto:contact@lalignehomme.com" className="btn-secondary">문의하기</a>
@@ -371,9 +527,20 @@ const Main: React.FC = () => {
           </div>
           <div className="footer-biz">
             <div className="footer-biz-info">
-              <span><strong>상호명</strong> 제니스</span><span><strong>대표</strong> 김결</span><span><strong>주소</strong> 중구 광복로49번길 33</span><span><strong>전화</strong> 050.6977.2787</span><span><strong>이메일</strong> busanfull6567@naver.com</span><span><strong>사업자등록번호</strong> 737-68-00698</span>
+              <span><strong>상호명</strong> 제니스</span>
+              <span><strong>대표</strong> 김결</span>
+              <span><strong>주소</strong> 중구 광복로49번길 33</span>
+              <span><strong>전화</strong> 050.6977.2787</span>
+              <span><strong>이메일</strong> busanfull6567@naver.com</span>
+              <span><strong>사업자등록번호</strong> 737-68-00698</span>
+              <span><strong>통신판매업신고번호</strong> 제 2025-부산중구-0216호</span>
+              <span><strong>개인정보보호책임자</strong> 김결</span>
+              <span><strong>무통장입금계좌</strong> 국민은행 473801-04-176193 (제니스)</span>
+              <span><strong>운영시간</strong> 평일 10:00 ~ 오후 4:00</span>
             </div>
-            <a href="https://pf.kakao.com/_xdfQsX" target="_blank" rel="noopener noreferrer" className="footer-kakao">카카오 채팅 상담 &rarr;</a>
+            <a href="https://pf.kakao.com/_xdfQsX" target="_blank" rel="noopener noreferrer" className="footer-kakao">
+              카카오 채팅 상담 &rarr;
+            </a>
           </div>
           <div className="footer-bottom">
             <p className="footer-legal">&copy; 2025 La Ligne Hommes. All rights reserved.</p>

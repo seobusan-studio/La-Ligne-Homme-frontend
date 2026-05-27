@@ -11,6 +11,16 @@ const CATEGORY_MAP: Record<string, number> = {
   '팬츠': 4
 };
 
+// 🌟 [신설] 카테고리별 규격(사이즈) 프리셋 데이터베이스
+const SIZE_PRESETS: Record<string, string[]> = {
+  '아우터': ['S', 'M', 'L', 'XL', 'XXL'],
+  '티셔츠 / 셔츠': ['95', '100', '105', '110'],
+  '가디건 / 니트': ['S', 'M', 'L', 'XL'],
+  '팬츠': ['28', '30', '32', '34', '36'],
+  '잡화': ['FREE'],
+  '신발': ['250', '260', '270', '280', '290']
+};
+
 const AdminMain: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -37,6 +47,7 @@ const AdminMain: React.FC = () => {
   const [orderSearchCustomer, setOrderSearchCustomer] = useState(''); // 주문자 이름 검색어
   const [orderStartDate, setOrderStartDate] = useState('');          // 기간 검색 시작일 (YYYY-MM-DD)
   const [orderEndDate, setOrderEndDate] = useState('');              // 기간 검색 종료일 (YYYY-MM-DD)
+  const [showOnlyCancelled, setShowOnlyCancelled] = useState(false); // 🌟 [신설] 주문 취소건만 보기 토글
 
   // 첫 줄이 FREE로 오염되는 것을 방지하기 위해 빈 문자열("")로 담백하게 스타트합니다.
   const [optionsList, setOptionsList] = useState<any[]>([
@@ -427,6 +438,36 @@ const AdminMain: React.FC = () => {
   };
 
   const handleOrderStatusChange = async (orderId: string, newStatus: string) => {
+    // 🌟 [신설] 주문 취소 승인 및 결제 환불 연동 로직
+    if (newStatus === '주문취소') {
+      if (!window.confirm('주문을 최종 취소하시겠습니까? 카드 결제 건인 경우 토스 결제 취소가 함께 진행됩니다.')) return;
+      
+      const targetOrder = orders.find(o => String(o.id || o.orderId) === String(orderId));
+      
+      // 토스 결제 키가 존재하는 경우 (카드/페이 결제 건)
+      if (targetOrder && targetOrder.paymentKey) {
+        try {
+          const refundRes = await fetch('http://localhost:8080/api/payments/toss/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentKey: targetOrder.paymentKey,
+              cancelReason: '관리자 승인 주문 취소'
+            })
+          });
+          const refundResult = await refundRes.json();
+          if (!refundRes.ok || !refundResult.success) {
+            alert(`결제 취소 실패: ${refundResult.message || '토스 API 에러'}`);
+            return; // 결제 취소 실패 시 주문 상태 변경 중단
+          }
+          alert('토스페이먼츠 결제 취소 승인이 완료되었습니다.');
+        } catch (e) {
+          alert('결제 취소 통신 중 오류가 발생했습니다.');
+          return;
+        }
+      }
+    }
+
     try {
       const response = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/status`, {
         method: 'PATCH',
@@ -854,19 +895,24 @@ const AdminMain: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {[...orders].sort((a, b) => Number(b.id || b.orderId) - Number(a.id || a.orderId)).slice(0, 5).map(order => (
-                    <tr key={order.id || order.orderId}>
-                      {/* 🌟 [대개혁 수혈] 데이터베이스 일련번호가 아닌 진짜 명품 주문 고유코드(orderNumber) 사출선 개통 */}
-                      <td style={{ fontWeight: '600', color: '#8f8576' }}>{order.orderNumber || order.id || order.orderId}</td>
-                      <td>{order.customer || order.customerName || '비회원'}</td>
-                      <td className="price-cell">₩ {(order.price || order.totalPrice || 0).toLocaleString()}</td>
-                      <td>
-                        <span className={`status-tag ${order.status === '배송완료' ? 'done' : 'ing'}`}>
-                          {order.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {[...orders].sort((a, b) => Number(b.id || b.orderId) - Number(a.id || a.orderId)).slice(0, 5).map(order => {
+                    const memberName = order.customer || order.customerName;
+                    const guestName = order.guestName || order.receiverName || order.recipientName || order.ordererName;
+                    const displayName = memberName ? memberName : (guestName ? `비회원 - ${guestName}` : '비회원');
+                    
+                    return (
+                      <tr key={order.id || order.orderId}>
+                        <td style={{ fontWeight: '600', color: '#8f8576' }}>{order.orderNumber || order.id || order.orderId}</td>
+                        <td>{displayName}</td>
+                        <td className="price-cell">₩ {(order.price || order.totalPrice || 0).toLocaleString()}</td>
+                        <td>
+                          <span className={`status-tag ${order.status === '배송완료' ? 'done' : order.status === '취소요청' ? 'refund' : 'ing'}`} style={order.status === '취소요청' ? { backgroundColor: '#5c1e1e', color: '#ffcccc' } : {}}>
+                            {order.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {orders.length === 0 && <tr><td colSpan={4} style={{textAlign:'center', color:'#555'}}>최근 들어온 실시간 주문이 없습니다.</td></tr>}
                 </tbody>
               </table>
@@ -1028,24 +1074,53 @@ const AdminMain: React.FC = () => {
                     </div>
                     
                     <div style={{ display: 'flex', gap: '8px', marginBottom: '6px', padding: '0 2px', fontSize: '11px', fontWeight: '600', color: '#888', letterSpacing: '0.05em' }}>
-                      <span style={{ flex: 2 }}>사이즈</span>
+                      <span style={{ flex: 2 }}>사이즈 (규격)</span>
                       <span style={{ flex: 1.5 }}>색상</span>
                       <span style={{ flex: 1.2 }}>추가금</span>
                       <span style={{ flex: 1.2 }}>수량</span>
                       {optionsList.length > 1 && <span style={{ width: '50px' }}></span>}
                     </div>
 
-                    {optionsList.map((opt, index) => (
-                      <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                        <input type="text" placeholder="사이즈명 (예: M, L, 260)" value={opt.size} onChange={(e) => handleOptionChange(index, 'size', e.target.value)} style={{ flex: 2, background: '#222', color: '#fff', border: '1px solid #333', padding: '8px', borderRadius: '4px' }} required />
-                        <input type="text" placeholder="색상 명세" value={opt.color} onChange={(e) => handleOptionChange(index, 'color', e.target.value)} style={{ flex: 1.5, background: '#222', color: '#fff', border: '1px solid #333', padding: '8px', borderRadius: '4px' }} />
-                        <input type="number" placeholder="추가금" value={opt.extraPrice} onChange={(e) => handleOptionChange(index, 'extraPrice', e.target.value)} style={{ flex: 1.2, background: '#222', color: '#fff', border: '1px solid #333', padding: '8px', borderRadius: '4px' }} />
-                        <input type="number" placeholder="재고량" value={opt.stockQuantity} onChange={(e) => handleOptionChange(index, 'stockQuantity', e.target.value)} style={{ flex: 1.2, background: '#222', color: '#fff', border: '1px solid #333', padding: '8px', borderRadius: '4px' }} required />
-                        {optionsList.length > 1 && (
-                          <button type="button" onClick={() => handleRemoveOptionRow(index)} style={{ background: '#5c1e1e', color: '#ffcccc', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}>삭제</button>
-                        )}
-                      </div>
-                    ))}
+                    {optionsList.map((opt, index) => {
+                      const presets = SIZE_PRESETS[prodCategory] || [];
+                      return (
+                        <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                          {/* 🌟 [개량] 카테고리에 맞는 사이즈 프리셋 선택창 인젝션 */}
+                          <div style={{ flex: 2, display: 'flex', gap: '4px' }}>
+                            <select 
+                              value={presets.includes(opt.size) ? opt.size : (opt.size ? 'custom' : '')}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === 'custom') handleOptionChange(index, 'size', '');
+                                else handleOptionChange(index, 'size', val);
+                              }}
+                              style={{ flex: 1, background: '#222', color: '#fff', border: '1px solid #333', padding: '8px', borderRadius: '4px', fontSize: '12px' }}
+                            >
+                              <option value="">선택</option>
+                              {presets.map(s => <option key={s} value={s}>{s}</option>)}
+                              <option value="custom">직접 입력</option>
+                            </select>
+                            {(!presets.includes(opt.size) || !opt.size) && (
+                              <input 
+                                type="text" 
+                                placeholder="직접입력" 
+                                value={opt.size} 
+                                onChange={(e) => handleOptionChange(index, 'size', e.target.value)} 
+                                style={{ flex: 1, background: '#222', color: '#fff', border: '1px solid #333', padding: '8px', borderRadius: '4px', width: '60px' }} 
+                                required 
+                              />
+                            )}
+                          </div>
+
+                          <input type="text" placeholder="색상 명세" value={opt.color} onChange={(e) => handleOptionChange(index, 'color', e.target.value)} style={{ flex: 1.5, background: '#222', color: '#fff', border: '1px solid #333', padding: '8px', borderRadius: '4px' }} />
+                          <input type="number" placeholder="추가금" value={opt.extraPrice} onChange={(e) => handleOptionChange(index, 'extraPrice', e.target.value)} style={{ flex: 1.2, background: '#222', color: '#fff', border: '1px solid #333', padding: '8px', borderRadius: '4px' }} />
+                          <input type="number" placeholder="재고량" value={opt.stockQuantity} onChange={(e) => handleOptionChange(index, 'stockQuantity', e.target.value)} style={{ flex: 1.2, background: '#222', color: '#fff', border: '1px solid #333', padding: '8px', borderRadius: '4px' }} required />
+                          {optionsList.length > 1 && (
+                            <button type="button" onClick={() => handleRemoveOptionRow(index)} style={{ background: '#5c1e1e', color: '#ffcccc', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}>삭제</button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <div className="wide-input-group full-height-textarea">
@@ -1223,8 +1298,17 @@ const AdminMain: React.FC = () => {
               return false; // 날짜가 아예 없는 유령 패킷은 기간 검색 시 선제 제외
             }
           }
+
+          // 3. 🌟 [신설] 주문 취소건만 보기 필터
+          if (showOnlyCancelled && order.status !== '주문취소') {
+            return false;
+          }
+
           return true;
         });
+
+        // 🌟 [신설] 현재 전체 원장 기준 주문 취소건수 집계
+        const totalCancelledCount = orders.filter(o => o.status === '주문취소').length;
 
         const sortedOrders = [...filteredOrders].sort((a, b) => Number(b.id || b.orderId) - Number(a.id || a.orderId));
         const totalOrderPages = Math.ceil(sortedOrders.length / ORDERS_PER_PAGE);
@@ -1278,11 +1362,29 @@ const AdminMain: React.FC = () => {
                 />
               </div>
 
-              {orderSearchCustomer || orderStartDate || orderEndDate ? (
+              {/* 🌟 [교정] 취소'요청' 요약 및 토글 버튼 */}
+              {totalRequestCount > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto', alignSelf: 'flex-end', paddingBottom: '8px' }}>
+                  <span style={{ color: '#ff6b6b', fontSize: '13px', fontWeight: '600', letterSpacing: '0.02em' }}>
+                    ⚠️ 취소요청: {totalRequestCount}건
+                  </span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ccc', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={showOnlyRequests} 
+                      onChange={(e) => { setShowOnlyRequests(e.target.checked); setOrderCurrentPage(1); }}
+                      style={{ cursor: 'pointer', accentColor: '#ff6b6b', width: '15px', height: '15px' }}
+                    />
+                    취소요청만 보기
+                  </label>
+                </div>
+              )}
+
+              {orderSearchCustomer || orderStartDate || orderEndDate || showOnlyRequests ? (
                 <button 
                   type="button" 
-                  onClick={() => { setOrderSearchCustomer(''); setOrderStartDate(''); setOrderEndDate(''); setOrderCurrentPage(1); }} 
-                  style={{ alignSelf: 'flex-end', background: '#222', color: '#bbb', border: '1px solid #333', padding: '9px 14px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', height: '35px', fontWeight: '600' }}
+                  onClick={() => { setOrderSearchCustomer(''); setOrderStartDate(''); setOrderEndDate(''); setShowOnlyRequests(false); setOrderCurrentPage(1); }} 
+                  style={{ alignSelf: 'flex-end', background: '#222', color: '#bbb', border: '1px solid #333', padding: '9px 14px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', height: '35px', fontWeight: '600', marginLeft: totalRequestCount > 0 ? '10px' : 'auto' }}
                 >
                   검색 조건 초기화
                 </button>
@@ -1297,6 +1399,7 @@ const AdminMain: React.FC = () => {
                   <th>주문자</th>
                   <th>주문 일자</th>
                   <th>결제 금액</th>
+                  <th>비고 (취소 내역)</th>
                   <th>배송 상태 변경</th>
                   <th>상세 목록</th> 
                 </tr>
@@ -1305,6 +1408,11 @@ const AdminMain: React.FC = () => {
                 {currentOrdersSlice.map(order => {
                   const oId = order.id || order.orderId;
                   const isExpanded = expandedOrderId === oId;
+                  
+                  // 🌟 [신설] 취소 건수 계산 (주문취소 상태일 때만 표시)
+                  const cancelText = order.status === '주문취소' 
+                    ? `주문취소 (${order.items?.length || 0}건)` 
+                    : '-';
 
                   return (
                     <React.Fragment key={oId}>
@@ -1329,17 +1437,20 @@ const AdminMain: React.FC = () => {
                         </td>
                         <td>{order.date || order.createdAt || '-'}</td>
                         <td className="price-cell">₩ {(order.price || order.totalPrice || 0).toLocaleString()}</td>
+                        <td style={{ color: order.status === '주문취소' ? '#ff6b6b' : '#555', fontSize: '12px' }}>{cancelText}</td>
                         <td>
                           <select 
                             value={order.status} 
                             className="admin-select" 
                             onChange={(e) => handleOrderStatusChange(order.id || order.orderId, e.target.value)}
+                            style={order.status === '취소요청' ? { borderColor: '#5c1e1e', color: '#ffcccc' } : {}}
                           >
                             <option value="주문접수">주문접수</option>
                             <option value="결제완료">결제완료</option>
                             <option value="배송준비중">배송준비중</option>
                             <option value="배송중">배송중</option>
                             <option value="배송완료">배송완료</option>
+                            <option value="취소요청">취소요청</option>
                             <option value="주문취소">주문취소</option>
                           </select>
                         </td>
@@ -1436,6 +1547,7 @@ const AdminMain: React.FC = () => {
                                 fontSize: '12px',
                                 color: '#eee'
                               }}>
+                                <div><strong style={{ color: '#888' }}>수령인 성함 :</strong> {order.receiverName || '-'}</div>
                                 <div><strong style={{ color: '#888' }}>수령인 연락처 :</strong> {order.receiverPhone || '-'}</div>
                                 <div><strong style={{ color: '#888' }}>배송지 상세주소 :</strong> {order.deliveryAddress || '-'}</div>
                                 <div style={{ gridColumn: '1 / -1' }}><strong style={{ color: '#888' }}>배송 요청사항 :</strong> {order.deliveryMemo || '없음'}</div>

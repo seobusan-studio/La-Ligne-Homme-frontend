@@ -30,3 +30,146 @@
   border-color: #b89a6a;
   transform: scale(1.1);
 }
+
+/* 최근 본 상품 사이드 드로워 스타일 */
+.recent-view-drawer {
+  position: fixed;
+  top: 0;
+  right: -320px;
+  width: 300px;
+  height: 100%;
+  background: #111;
+  z-index: 1100;
+  transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #222;
+}
+
+.recent-view-drawer.open {
+  right: 0;
+}
+
+.drawer-header {
+  padding: 1.8rem 1.5rem;
+  border-bottom: 1px solid #222;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.15em;
+  color: #b89a6a;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #fff;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0;
+}
+
+.recent-item-card {
+  display: flex;
+  gap: 1.2rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #1a1a1a;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.recent-item-card:hover {
+  background: #161616;
+}
+
+.recent-item-img {
+  width: 65px;
+  height: 75px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 2px;
+  border: 1px solid #222;
+  flex-shrink: 0;
+}
+
+.recent-item-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.recent-item-info .name {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.recent-item-info .price {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: #b89a6a;
+  font-weight: 500;
+}
+
+.empty-msg {
+  text-align: center;
+  color: #555;
+  margin-top: 5rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+}
+
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(2px);
+  z-index: 1050;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 스크롤바 커스텀 */
+.drawer-body::-webkit-scrollbar {
+  width: 4px;
+}
+.drawer-body::-webkit-scrollbar-track {
+  background: #111;
+}
+.drawer-body::-webkit-scrollbar-thumb {
+  background: #333;
+}
+.drawer-body::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}

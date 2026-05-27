@@ -1,17 +1,25 @@
 // src/ProductDetail/Checkout.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { loadPaymentWidget } from '@tosspayments/payment-widget-sdk';
 import './Checkout.css';
+
+// 🌟 [교정] 'PaymentWidgetInstance'는 타입일 뿐이므로 런타임 에러 방지를 위해 any 혹은 별도 타입 처리
+type PaymentWidgetInstance = any;
 
 const Checkout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
+  // 토스페이먼츠 위젯 인스턴스 저장용 레퍼런스
+  const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null);
+  const paymentMethodsWidgetRef = useRef<any>(null);
+
   // 🌟 [정밀 교정] 형님의 지시를 적극 준수하여 넘어오는 배송비 변수를 과감히 차단하고 0원 무료배송으로 락다운합니다.
   const { selectedItems = [], totalAmount = 0 } = (location.state || {}) as any;
   const deliveryFee: number = 0;
 
-  // 로그인 여부 상태판별 및 비회원 전용 주문 비밀번호 상태창 생성 (오리지널 사수)
+  // ... (rest of states)
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [nonMemberPw, setNonMemberPw] = useState('');
 
@@ -22,6 +30,39 @@ const Checkout: React.FC = () => {
 
   // 사용자가 화면에서 고르는 실시간 결제 방식 상태창 (기본값: 무통장입금)
   const [paymentMethod, setPaymentMethod] = useState<string>('무통장입금');
+  const [isWidgetReady, setIsWidgetReady] = useState(false); // 🌟 [신설] 위젯 렌더링 완료 상태
+
+  // 토스페이먼츠 위젯 초기화 (테스트 키 사용)
+  useEffect(() => {
+    if (paymentMethod === 'ONLINE_PAYMENT') {
+      const clientKey = import.meta.env.VITE_TOSS_CLIENT_KEY || "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm"; 
+      const customerKey = "ANONYMOUS"; // 비회원 대응 고유키
+
+      (async () => {
+        const paymentWidget = await loadPaymentWidget(clientKey, customerKey);
+        
+        // 결제 UI 렌더링
+        const paymentMethodsWidget = paymentWidget.renderPaymentMethods(
+          "#payment-method",
+          { value: totalAmount + deliveryFee },
+          { variantKey: "DEFAULT" }
+        );
+
+        // 이용약관 UI 렌더링
+        paymentWidget.renderAgreement("#agreement", { variantKey: "AGREEMENT" });
+
+        // 🌟 [중요] 토스 공식 가이드: 위젯이 완전히 그려졌을 때 ready 상태로 전환
+        paymentMethodsWidget.on('ready', () => {
+          setIsWidgetReady(true);
+        });
+
+        paymentWidgetRef.current = paymentWidget;
+        paymentMethodsWidgetRef.current = paymentMethodsWidget;
+      })();
+    }
+  }, [paymentMethod, totalAmount, deliveryFee]);
+
+  // ... (rest of effects and handlers)
 
   /* =========================================================================
    * 🌟 [신설 상태창] 배송지 유형 선택 라디오 플래그 및 새로운 배송지 입력용 주소 저장소
@@ -163,6 +204,45 @@ const Checkout: React.FC = () => {
     };
 
     console.log("▲ [2단계] 스프링 부트 백엔드로 실제로 쏘아 올려지는 최종 패킷 양식:", orderRequestDto);
+
+    // 🌟 [토스페이먼츠 분기] 온라인 결제 선택 시 위젯 결제창 격발
+    if (paymentMethod === 'ONLINE_PAYMENT' || paymentMethod === 'CARD' || paymentMethod === 'KAKAO_PAY' || paymentMethod === 'TOSS') {
+      const paymentWidget = paymentWidgetRef.current;
+      if (!paymentWidget || !isWidgetReady) {
+        alert('결제 UI를 불러오는 중입니다. 1~2초 후 다시 시도해 주세요.');
+        return;
+      }
+
+      const tossOrderId = `LLH_${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+      const orderName = selectedItems.length > 1 
+        ? `${selectedItems[0].name} 외 ${selectedItems.length - 1}건`
+        : selectedItems[0].name;
+
+      // 🌟 [임시 보관] 결제 완료 후 돌아왔을 때 주문을 마저 생성하기 위해 주문 데이터를 세션에 잠시 박제합니다.
+      sessionStorage.setItem(`pending_order_${tossOrderId}`, JSON.stringify({
+        orderRequest: orderRequestDto,
+        totalAmount: totalAmount,
+        selectedItems: selectedItems
+      }));
+
+      try {
+        await paymentWidget.requestPayment({
+          orderId: tossOrderId,
+          orderName: orderName,
+          customerName: receiverName,
+          customerEmail: session?.email || 'guest@lalignehomme.com',
+          successUrl: `${window.location.origin}/payment/success`,
+          failUrl: `${window.location.origin}/payment/fail`,
+        });
+      } catch (error: any) {
+        if (error.code === 'USER_CANCEL') {
+          // 사용자가 결제창을 닫은 경우
+        } else {
+          alert(`결제 요청 실패: ${error.message}`);
+        }
+      }
+      return; // 토스 결제창으로 이동하므로 하단 로직은 타지 않음
+    }
 
     try {
       const response = await fetch(`http://localhost:8080/api/orders?paymentMethod=${encodeURIComponent(paymentMethod)}&email=${encodeURIComponent(session?.email || '')}`, {
@@ -412,10 +492,17 @@ const Checkout: React.FC = () => {
                 }}
               >
                 <option value="무통장입금">무통장입금 (가상계좌 발송)</option>
-                <option value="CARD">신용카드 즉시 결제</option>
-                <option value="KAKAO_PAY">카카오페이 간편결제</option>
+                <option value="ONLINE_PAYMENT">온라인 결제 (신용카드 / 간편결제)</option>
               </select>
             </div>
+
+            {/* 🌟 [토스페이먼츠 연동 구역] 온라인 결제 선택 시 위젯 노출 */}
+            {paymentMethod === 'ONLINE_PAYMENT' && (
+              <div className="toss-widget-area" style={{ marginTop: '30px', background: '#fff', padding: '20px 0', borderRadius: '4px' }}>
+                <div id="payment-method"></div>
+                <div id="agreement"></div>
+              </div>
+            )}
 
           </div>
         </form>
