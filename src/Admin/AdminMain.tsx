@@ -1305,17 +1305,17 @@ const AdminMain: React.FC = () => {
             return false;
           }
 
-          // 4. 🌟 [신설] 취소요청건만 보기 필터
-          if (showOnlyRequests && order.status !== '취소요청') {
+          // 4. 🌟 [신설] 취소/교환/반품 요청건만 보기 필터
+          if (showOnlyRequests && order.status !== '취소요청' && order.status !== '교환요청' && order.status !== '반품요청') {
             return false;
           }
 
           return true;
         });
 
-        // 🌟 [신설] 현재 전체 원장 기준 주문 취소건수 집계
+        // 🌟 [신설] 현재 전체 원장 기준 주문 취소/CS 요청 건수 집계
         const totalCancelledCount = orders.filter(o => o.status === '주문취소').length;
-        const totalRequestCount = orders.filter(o => o.status === '취소요청').length; // 🌟 [신설] 취소요청 건수 집계
+        const totalRequestCount = orders.filter(o => o.status === '취소요청' || o.status === '교환요청' || o.status === '반품요청').length; 
 
         const sortedOrders = [...filteredOrders].sort((a, b) => Number(b.id || b.orderId) - Number(a.id || a.orderId));
         const totalOrderPages = Math.ceil(sortedOrders.length / ORDERS_PER_PAGE);
@@ -1369,11 +1369,11 @@ const AdminMain: React.FC = () => {
                 />
               </div>
 
-              {/* 🌟 [교정] 취소'요청' 요약 및 토글 버튼 */}
+              {/* 🌟 [교정] CS 처리 요청 요약 및 토글 버튼 */}
               {totalRequestCount > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto', alignSelf: 'flex-end', paddingBottom: '8px' }}>
                   <span style={{ color: '#ff6b6b', fontSize: '13px', fontWeight: '600', letterSpacing: '0.02em' }}>
-                    ⚠️ 취소요청: {totalRequestCount}건
+                    ⚠️ CS 요청(취소/교환/반품): {totalRequestCount}건
                   </span>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ccc', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
                     <input 
@@ -1382,7 +1382,7 @@ const AdminMain: React.FC = () => {
                       onChange={(e) => { setShowOnlyRequests(e.target.checked); setOrderCurrentPage(1); }}
                       style={{ cursor: 'pointer', accentColor: '#ff6b6b', width: '15px', height: '15px' }}
                     />
-                    취소요청만 보기
+                    CS요청건만 보기
                   </label>
                 </div>
               )}
@@ -1450,7 +1450,7 @@ const AdminMain: React.FC = () => {
                             value={order.status} 
                             className="admin-select" 
                             onChange={(e) => handleOrderStatusChange(order.id || order.orderId, e.target.value)}
-                            style={order.status === '취소요청' ? { borderColor: '#5c1e1e', color: '#ffcccc' } : {}}
+                            style={(order.status === '취소요청' || order.status === '교환요청' || order.status === '반품요청') ? { borderColor: '#5c1e1e', color: '#ffcccc' } : {}}
                           >
                             <option value="주문접수">주문접수</option>
                             <option value="결제완료">결제완료</option>
@@ -1459,6 +1459,8 @@ const AdminMain: React.FC = () => {
                             <option value="배송완료">배송완료</option>
                             <option value="취소요청">취소요청</option>
                             <option value="주문취소">주문취소</option>
+                            <option value="교환요청">교환요청</option>
+                            <option value="반품요청">반품요청</option>
                           </select>
                         </td>
                         <td>

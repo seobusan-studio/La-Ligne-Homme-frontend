@@ -186,7 +186,7 @@ const ProductDetail: React.FC = () => {
   };
 
   // 장바구니 꼬임 현상 방지용 로그인 계정별 고유 키 매핑 로직 (원형 사수)
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!selectedOptionId) {
       alert('현대 남성의 실루엣 완성을 위해 사이즈 옵션을 반드시 선택해 주세요.');
       return;
@@ -196,7 +196,40 @@ const ProductDetail: React.FC = () => {
     const sessionRaw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
     const session = sessionRaw ? JSON.parse(sessionRaw) : null;
     
-    const userIdentifier = session ? (session.name || session.id || 'user') : 'guest';
+    // 🌟 로그인 회원일 경우 백엔드 DB 장바구니로 연동
+    if (session && session.id) {
+      try {
+        const res = await fetch('http://localhost:8080/api/carts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': String(session.id)
+          },
+          body: JSON.stringify({
+            optionId: selectedOptionId,
+            quantity: quantity
+          })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+          setSelectedOptionId(''); 
+          setQuantity(1); 
+          if (window.confirm('선택하신 컬렉션 제품이 회원님의 BAG에 안전하게 담겼습니다.\n지금 장바구니 화면으로 이동하시겠습니까?')) {
+            navigate('/cart');
+          }
+        } else {
+          alert('장바구니 담기에 실패했습니다: ' + (data.message || '알 수 없는 오류'));
+        }
+      } catch (err) {
+        console.error('장바구니 API 호출 에러:', err);
+        alert('서버와의 통신에 실패했습니다.');
+      }
+      return;
+    }
+
+    // 🌟 비회원일 경우 기존 로컬스토리지 장바구니 유지
+    const userIdentifier = 'guest';
     const dynamicCartKey = `laligne_cart_${userIdentifier}`;
 
     const currentCart = JSON.parse(localStorage.getItem(dynamicCartKey) || '[]');
@@ -228,7 +261,7 @@ const ProductDetail: React.FC = () => {
     setSelectedOptionId(''); 
     setQuantity(1); 
 
-    if (window.confirm('선택하신 컬렉션 제품이 BAG에 안전하게 담겼습니다.\n지금 장바구니 화면으로 이동하시겠습니까?')) {
+    if (window.confirm('선택하신 컬렉션 제품이 비회원 BAG에 담겼습니다.\n회원으로 로그인하시면 다양한 기기에서 장바구니가 연동됩니다.\n지금 장바구니 화면으로 이동하시겠습니까?')) {
       navigate('/cart');
     }
   };

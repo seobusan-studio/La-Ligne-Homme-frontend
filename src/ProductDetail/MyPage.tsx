@@ -30,6 +30,40 @@ const MyPage: React.FC = () => {
   const [pwSuccess, setPwSuccess] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+  /* =========================================================================
+   * 🚚 [신설] 배송 조회 및 교환/반품 모달 제어 상태창
+   * ========================================================================= */
+  const [claimOrderId, setClaimOrderId] = useState<number | null>(null);
+  const [claimType, setClaimType] = useState<'EXCHANGE' | 'RETURN'>('EXCHANGE');
+  const [claimReason, setClaimReason] = useState<string>('');
+
+  const handleClaimSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!claimOrderId) return;
+    if (!claimReason.trim()) {
+      alert('교환/반품 사유를 입력해 주세요.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/orders/${claimOrderId}/claim`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claimType, reason: claimReason })
+      });
+      if (response.ok) {
+        alert('요청이 정상 접수되었습니다. 관리자 확인 후 처리됩니다.');
+        setClaimOrderId(null);
+        setClaimReason('');
+        window.location.reload();
+      } else {
+        alert('요청 처리 중 오류가 발생했습니다.');
+      }
+    } catch (err) {
+      alert('서버 통신 실패');
+    }
+  };
+
   useEffect(() => {
     const SESSION_KEY = 'laligne_session';
     const sessionRaw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
@@ -331,18 +365,41 @@ const MyPage: React.FC = () => {
                         )}
                         
                         {order.trackingNumber ? (
-                          <div 
-                            onClick={() => {
-                              const courierName = 'CJ대한통운';
-                              const trackingNum = order.trackingNumber;
-                              const naverSearchUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(courierName + ' ' + trackingNum)}`;
-                              window.open(naverSearchUrl, '_blank');
-                            }}
-                            className="tracking-btn-trigger"
-                            title="클릭하시면 네이버 실시간 배송조회 페이지가 새 창으로 열립니다"
-                          >
-                            <span>{order.courierName || 'CJ대한통운'}</span>
-                            <span className="tracking-num-highlight">{order.trackingNumber}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <div 
+                              onClick={() => {
+                                const trackingNum = order.trackingNumber;
+                                // 🌟 [수혈] CJ대한통운 전용 배송조회 팝업 다이렉트 연동
+                                const cjSearchUrl = `https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${trackingNum}`;
+                                window.open(cjSearchUrl, 'cjTrackingWindow', 'width=800,height=800,scrollbars=yes');
+                              }}
+                              className="tracking-btn-trigger"
+                              title="클릭하시면 CJ대한통운 실시간 배송조회 페이지가 새 창으로 열립니다"
+                            >
+                              <span>{order.courierName || 'CJ대한통운'}</span>
+                              <span className="tracking-num-highlight">{order.trackingNumber}</span>
+                            </div>
+                            
+                            {/* 🌟 [신설] 배송중 / 배송완료 상태일 때만 활성화되는 교환/반품 원클릭 버튼 */}
+                            {(order.status === '배송중' || order.status === '배송완료') && (
+                              <button 
+                                type="button"
+                                onClick={() => setClaimOrderId(order.id || order.orderId)}
+                                style={{
+                                  padding: '4px 8px',
+                                  fontSize: '11px',
+                                  backgroundColor: '#111',
+                                  border: '1px solid #111',
+                                  color: '#fff',
+                                  cursor: 'pointer',
+                                  borderRadius: '2px',
+                                  whiteSpace: 'nowrap',
+                                  marginTop: '4px'
+                                }}
+                              >
+                                교환/반품 신청
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <span style={{ fontSize: '11px', color: '#999999', fontStyle: 'italic', padding: '5px 0' }}>송장 발급 대기중</span>
@@ -355,6 +412,47 @@ const MyPage: React.FC = () => {
             </table>
           )}
         </div>
+
+        {/* 🌟 [신설] 교환/반품 사유 입력 모달 레이어 */}
+        {claimOrderId && (
+          <div className="claim-modal-overlay" style={{
+            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center'
+          }}>
+            <div className="claim-modal-content" style={{
+              background: '#fff', padding: '30px', borderRadius: '4px', width: '400px', maxWidth: '90%'
+            }}>
+              <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>교환 및 반품 신청</h3>
+              <form onSubmit={handleClaimSubmit}>
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '8px' }}>신청 구분</label>
+                  <div style={{ display: 'flex', gap: '15px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px' }}>
+                      <input type="radio" name="claimType" value="EXCHANGE" checked={claimType === 'EXCHANGE'} onChange={() => setClaimType('EXCHANGE')} /> 교환
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px' }}>
+                      <input type="radio" name="claimType" value="RETURN" checked={claimType === 'RETURN'} onChange={() => setClaimType('RETURN')} /> 반품
+                    </label>
+                  </div>
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '8px' }}>신청 사유 (필수)</label>
+                  <textarea 
+                    value={claimReason} 
+                    onChange={e => setClaimReason(e.target.value)} 
+                    placeholder="사이즈 교환, 단순 변심 등 사유를 상세히 적어주세요."
+                    style={{ width: '100%', height: '80px', padding: '10px', border: '1px solid #ddd', resize: 'none', fontSize: '13px' }}
+                    required
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="button" onClick={() => setClaimOrderId(null)} style={{ flex: 1, padding: '10px', background: '#f5f5f5', border: '1px solid #ddd', cursor: 'pointer' }}>취소</button>
+                  <button type="submit" style={{ flex: 1, padding: '10px', background: '#111', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>신청 접수</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* [장바구니 배너] ➡️ 형님의 순정 클래스(mypage-cart-banner, cart-banner-text-box) 완벽 이식 */}
         <div className="mypage-cart-banner">

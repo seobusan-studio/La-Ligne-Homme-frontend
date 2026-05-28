@@ -280,11 +280,30 @@ const Checkout: React.FC = () => {
         const userIdentifier = session ? (session.name || session.id || 'user') : 'guest';
         const dynamicCartKey = `laligne_cart_${userIdentifier}`;
         
-        const localCart = JSON.parse(localStorage.getItem(dynamicCartKey) || '[]');
-        const remainingCart = localCart.filter((localItem: any) => 
-          !selectedItems.some((sel: any) => sel.id === localItem.id && sel.size === localItem.size)
-        );
-        localStorage.setItem(dynamicCartKey, JSON.stringify(remainingCart));
+        // 🌟 백엔드 연동 회원이면 DB 장바구니에서 구매 항목 삭제 요청
+        if (session && session.id) {
+          const cartItemIds = selectedItems
+            .map((sel: any) => sel.cartItemId)
+            .filter((id: any) => id != null);
+            
+          if (cartItemIds.length > 0) {
+            try {
+              fetch(`http://localhost:8080/api/carts?ids=${cartItemIds.join(',')}`, {
+                method: 'DELETE',
+                headers: { 'X-User-Id': String(session.id) }
+              });
+            } catch (err) {
+              console.error('결제 후 장바구니 항목 정리 실패:', err);
+            }
+          }
+        } else {
+          // 비회원이면 로컬 스토리지 정리 유지
+          const localCart = JSON.parse(localStorage.getItem(dynamicCartKey) || '[]');
+          const remainingCart = localCart.filter((localItem: any) => 
+            !selectedItems.some((sel: any) => sel.id === localItem.id && sel.size === localItem.size && sel.color === localItem.color)
+          );
+          localStorage.setItem(dynamicCartKey, JSON.stringify(remainingCart));
+        }
 
         navigate('/payment-complete', { state: successData });
       } else {

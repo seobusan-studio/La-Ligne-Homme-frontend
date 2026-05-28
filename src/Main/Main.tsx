@@ -520,8 +520,8 @@ const Main: React.FC = () => {
             <div className="footer-col">
               <h4>고객센터</h4>
               <ul>
-                <li><a href="#">배송 안내</a></li>
-                <li><a href="#">교환 · 반품</a></li>
+                <li><a href="#faq" onClick={(e) => { e.preventDefault(); scrollToSection('faq'); }}>배송 안내</a></li>
+                <li><a href="#faq" onClick={(e) => { e.preventDefault(); scrollToSection('faq'); }}>교환 · 반품</a></li>
               </ul>
             </div>
           </div>
