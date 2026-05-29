@@ -11,14 +11,14 @@ const CATEGORY_MAP: Record<string, number> = {
   '팬츠': 4
 };
 
-// 🌟 [신설] 카테고리별 규격(사이즈) 프리셋 데이터베이스
+// 🌟 [신설] 동적 사이즈 규격 프리셋 데이터베이스 (백엔드 카테고리와 연동)
 const SIZE_PRESETS: Record<string, string[]> = {
+  '상의': ['95', '100', '105', '110'],
+  '하의': ['28', '30', '32', '34', '36'],
   '아우터': ['S', 'M', 'L', 'XL', 'XXL'],
-  '티셔츠 / 셔츠': ['95', '100', '105', '110'],
-  '가디건 / 니트': ['S', 'M', 'L', 'XL'],
-  '팬츠': ['28', '30', '32', '34', '36'],
-  '잡화': ['FREE'],
-  '신발': ['250', '260', '270', '280', '290']
+  '니트/가디건': ['S', 'M', 'L', 'XL'],
+  '신발': ['250', '260', '270', '280', '290'],
+  '잡화/기타': ['FREE']
 };
 
 const AdminMain: React.FC = () => {
@@ -35,6 +35,7 @@ const AdminMain: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
   // 관리자가 카테고리를 실시간 신설/제거하기 위한 어드민 인풋 필드
   const [newCatName, setNewCatName] = useState('');
+  const [newCatSizePreset, setNewCatSizePreset] = useState('상의'); // 🌟 [신설] 새 카테고리용 사이즈 프리셋 선택 상태
   const [draggedCatIndex, setDraggedCatIndex] = useState<number | null>(null);
 
   // 어드민 상품 리스트 제어용 실시간 서칭 키워드 및 카테고리 필터값
@@ -149,7 +150,7 @@ const AdminMain: React.FC = () => {
     } catch (e) { console.log('동적 카테고리 원장 통신 대기 중...');}
 
     try {
-      const response = await fetch('http://localhost:8080/api/order/admin/settlement');
+      const response = await fetch('http://localhost:8080/api/admin/dashboard/stats');
       
       // 🌟 [강력한 가드] 상태 코드가 403(권한없음)인 경우를 별도로 잡아냅니다.
       if (response.status === 403) {
@@ -165,7 +166,8 @@ const AdminMain: React.FC = () => {
           totalRefund: resultStats.data.totalRefund ?? 0,
           netProfit: (resultStats.data.totalSales ?? 0) - (resultStats.data.totalRefund ?? 0),
           orderCount: resultStats.data.orderCount ?? 0,
-          dailySales: resultStats.data.dailySales ?? {}
+          dailySales: resultStats.data.dailySales ?? {},
+          lowStockItems: resultStats.data.lowStockItems ?? [] // 🌟 [신설] 품절 임박 리스트 동기화
         });
       }
     } catch (e) { 
@@ -376,7 +378,11 @@ const AdminMain: React.FC = () => {
       const response = await fetch('http://localhost:8080/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCatName, sortOrder: nextOrder })
+        body: JSON.stringify({ 
+          name: newCatName, 
+          sortOrder: nextOrder,
+          sizePreset: newCatSizePreset // 🌟 [주입] 선택된 사이즈 프리셋 키 전송
+        })
       });
       if (response.ok) {
         alert(`[${newCatName}] 카테고리가 실시간으로 추가 개통되었습니다.`);
@@ -439,9 +445,15 @@ const AdminMain: React.FC = () => {
   };
 
   const handleOrderStatusChange = async (orderId: string, newStatus: string) => {
-    // 🌟 [신설] 주문 취소 승인 및 결제 환불 연동 로직
-    if (newStatus === '주문취소') {
-      if (!window.confirm('주문을 최종 취소하시겠습니까? 카드 결제 건인 경우 토스 결제 취소가 함께 진행됩니다.')) return;
+    let refundSuccessful = false;
+
+    // 🌟 [신설] 주문 취소/반품 완료 승인 및 결제 환불 연동 로직
+    if (newStatus === '주문취소' || newStatus === '반품완료') {
+      const confirmMsg = newStatus === '주문취소' 
+        ? '주문을 최종 취소하시겠습니까? 카드 결제 건인 경우 토스 결제 취소가 함께 진행됩니다.'
+        : '반품 처리를 최종 완료하시겠습니까? 카드 결제 건인 경우 토스 결제 환불이 함께 진행됩니다.';
+
+      if (!window.confirm(confirmMsg)) return;
       
       const targetOrder = orders.find(o => String(o.id || o.orderId) === String(orderId));
       
@@ -453,7 +465,7 @@ const AdminMain: React.FC = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               paymentKey: targetOrder.paymentKey,
-              cancelReason: '관리자 승인 주문 취소'
+              cancelReason: `관리자 승인 ${newStatus}`
             })
           });
           const refundResult = await refundRes.json();
@@ -461,12 +473,16 @@ const AdminMain: React.FC = () => {
             alert(`결제 취소 실패: ${refundResult.message || '토스 API 에러'}`);
             return; // 결제 취소 실패 시 주문 상태 변경 중단
           }
-          alert('토스페이먼츠 결제 취소 승인이 완료되었습니다.');
+          refundSuccessful = true;
         } catch (e) {
           alert('결제 취소 통신 중 오류가 발생했습니다.');
           return;
         }
       }
+    }
+
+    if (newStatus === '교환완료') {
+      if (!window.confirm('교환 처리를 최종 완료하시겠습니까? 새 물건의 운송장 번호를 미리 저장하셨는지 확인해 주십시오.')) return;
     }
 
     try {
@@ -476,8 +492,12 @@ const AdminMain: React.FC = () => {
         body: JSON.stringify({ status: newStatus })
       });
       if (response.ok) {
-        alert(`주문 번호 [${orderId}]의 상태가 [${newStatus}](으)로 변경 완료되었습니다.`);
-        loadBackendData();
+        if (refundSuccessful) {
+          alert(`[환불 완료] 토스페이먼츠 결제 취소 승인 및 주문 번호 [${orderId}]의 상태가 [${newStatus}]로 변경 완료되었습니다.`);
+        } else {
+          alert(`주문 번호 [${orderId}]의 상태가 [${newStatus}](으)로 변경 완료되었습니다.`);
+        }
+        await loadBackendData(); // 🌟 [수정] await 추가하여 상태 업데이트 확실히 대기
       } else {
         alert('배송 상태 업데이트 실패');
       }
@@ -907,7 +927,10 @@ const AdminMain: React.FC = () => {
                         <td>{displayName}</td>
                         <td className="price-cell">₩ {(order.price || order.totalPrice || 0).toLocaleString()}</td>
                         <td>
-                          <span className={`status-tag ${order.status === '배송완료' ? 'done' : order.status === '취소요청' ? 'refund' : 'ing'}`} style={order.status === '취소요청' ? { backgroundColor: '#5c1e1e', color: '#ffcccc' } : {}}>
+                          <span 
+                            className={`status-tag ${order.status === '배송완료' ? 'done' : (order.status === '취소요청' || order.status === '교환요청' || order.status === '반품요청') ? 'refund' : 'ing'}`} 
+                            style={(order.status === '취소요청' || order.status === '교환요청' || order.status === '반품요청') ? { backgroundColor: '#5c1e1e', color: '#ffcccc' } : {}}
+                          >
                             {order.status}
                           </span>
                         </td>
@@ -918,6 +941,53 @@ const AdminMain: React.FC = () => {
                 </tbody>
               </table>
             </section>
+
+            {/* 🌟 [신설] 품절 임박 알림 섹션 (재고 5개 미만 모니터링) */}
+            {(stats as any).lowStockItems && (stats as any).lowStockItems.length > 0 && (
+              <section className="dashboard-detail-section" style={{ marginTop: '30px' }}>
+                <h2 style={{ color: '#ff6b6b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🚨 품절 임박 알림 (재고 5개 미만)
+                </h2>
+                <div style={{ 
+                  background: '#1a1111', 
+                  border: '1px solid #5c1e1e', 
+                  borderRadius: '8px', 
+                  padding: '15px' 
+                }}>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>상품명</th>
+                        <th>옵션 (규격/색상)</th>
+                        <th>현재 재고</th>
+                        <th>상태</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(stats as any).lowStockItems.map((item: any, idx: number) => (
+                        <tr key={idx}>
+                          <td style={{ fontWeight: '600' }}>{item.productName}</td>
+                          <td style={{ color: '#aaa' }}>{item.size} / {item.color}</td>
+                          <td style={{ color: '#ff6b6b', fontWeight: 'bold' }}>{item.currentStock} 개</td>
+                          <td>
+                            <span style={{ 
+                              fontSize: '11px', 
+                              padding: '2px 8px', 
+                              background: '#3d1616', 
+                              color: '#ffaaaa', 
+                              borderRadius: '4px',
+                              border: '1px solid #5c1e1e'
+                            }}>
+                              즉시 보충 필요
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
           </>
         );
 
@@ -1083,7 +1153,11 @@ const AdminMain: React.FC = () => {
                     </div>
 
                     {optionsList.map((opt, index) => {
-                      const presets = SIZE_PRESETS[prodCategory] || [];
+                      // 🌟 [개량] 동적 카테고리 정보에서 해당 카테고리의 사이즈 프리셋 키를 실시간 추출
+                      const currentCatObj = categories.find(c => c.name === prodCategory);
+                      const presetKey = currentCatObj?.sizePreset || '상의'; // 기본값 상의
+                      const presets = SIZE_PRESETS[presetKey] || [];
+
                       return (
                         <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
                           {/* 🌟 [개량] 카테고리에 맞는 사이즈 프리셋 선택창 인젝션 */}
@@ -1097,7 +1171,7 @@ const AdminMain: React.FC = () => {
                               }}
                               style={{ flex: 1, background: '#222', color: '#fff', border: '1px solid #333', padding: '8px', borderRadius: '4px', fontSize: '12px' }}
                             >
-                              <option value="">선택</option>
+                              <option value="">선택 ({presetKey})</option>
                               {presets.map(s => <option key={s} value={s}>{s}</option>)}
                               <option value="custom">직접 입력</option>
                             </select>
@@ -1156,6 +1230,18 @@ const AdminMain: React.FC = () => {
               <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', letterSpacing: '0.03em', color: '#fff', textTransform: 'uppercase' }}>🔧 실시간 동적 카테고리 제어 보드 (드래그로 순서 변경)</h3>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
                 <input type="text" placeholder="새 카테고리명 (예: 신발, 모자)" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} style={{ background: '#222', border: '1px solid #333', color: '#fff', padding: '8px 12px', borderRadius: '4px', width: '220px' }} />
+                
+                {/* 🌟 [신설] 사이즈 프리셋 선택 드롭다운 */}
+                <select 
+                  value={newCatSizePreset} 
+                  onChange={(e) => setNewCatSizePreset(e.target.value)}
+                  style={{ background: '#222', border: '1px solid #333', color: '#fff', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  {Object.keys(SIZE_PRESETS).map(key => (
+                    <option key={key} value={key}>{key} 규격</option>
+                  ))}
+                </select>
+
                 <button type="button" onClick={handleCreateCategory} style={{ background: '#fff', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '4px', fontWeight: '600', cursor: 'pointer' }}>+ 실시간 개통</button>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -1182,6 +1268,7 @@ const AdminMain: React.FC = () => {
                   >
                     <span style={{ color: '#8f8576', fontWeight: 'bold' }}>{idx + 1}</span>
                     <span style={{ fontWeight: '500', color: '#fff' }}>{cat.name}</span>
+                    <span style={{ fontSize: '10px', color: '#666', marginLeft: '4px' }}>({cat.sizePreset || '미지정'})</span>
                     <button type="button" onClick={() => handleDeleteCategory(cat.id, cat.name)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: '0 2px', fontWeight: 'bold' }}>×</button>
                   </div>
                 ))}
@@ -1305,17 +1392,17 @@ const AdminMain: React.FC = () => {
             return false;
           }
 
-          // 4. 🌟 [신설] 취소요청건만 보기 필터
-          if (showOnlyRequests && order.status !== '취소요청') {
+          // 4. 🌟 [신설] 취소/교환/반품 요청건만 보기 필터
+          if (showOnlyRequests && order.status !== '취소요청' && order.status !== '교환요청' && order.status !== '반품요청') {
             return false;
           }
 
           return true;
         });
 
-        // 🌟 [신설] 현재 전체 원장 기준 주문 취소건수 집계
+        // 🌟 [신설] 현재 전체 원장 기준 주문 취소/CS 요청 건수 집계
         const totalCancelledCount = orders.filter(o => o.status === '주문취소').length;
-        const totalRequestCount = orders.filter(o => o.status === '취소요청').length; // 🌟 [신설] 취소요청 건수 집계
+        const totalRequestCount = orders.filter(o => o.status === '취소요청' || o.status === '교환요청' || o.status === '반품요청').length; 
 
         const sortedOrders = [...filteredOrders].sort((a, b) => Number(b.id || b.orderId) - Number(a.id || a.orderId));
         const totalOrderPages = Math.ceil(sortedOrders.length / ORDERS_PER_PAGE);
@@ -1369,11 +1456,11 @@ const AdminMain: React.FC = () => {
                 />
               </div>
 
-              {/* 🌟 [교정] 취소'요청' 요약 및 토글 버튼 */}
+              {/* 🌟 [교정] CS 처리 요청 요약 및 토글 버튼 */}
               {totalRequestCount > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto', alignSelf: 'flex-end', paddingBottom: '8px' }}>
                   <span style={{ color: '#ff6b6b', fontSize: '13px', fontWeight: '600', letterSpacing: '0.02em' }}>
-                    ⚠️ 취소요청: {totalRequestCount}건
+                    ⚠️ CS 요청(취소/교환/반품): {totalRequestCount}건
                   </span>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ccc', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
                     <input 
@@ -1382,7 +1469,7 @@ const AdminMain: React.FC = () => {
                       onChange={(e) => { setShowOnlyRequests(e.target.checked); setOrderCurrentPage(1); }}
                       style={{ cursor: 'pointer', accentColor: '#ff6b6b', width: '15px', height: '15px' }}
                     />
-                    취소요청만 보기
+                    CS요청건만 보기
                   </label>
                 </div>
               )}
@@ -1450,7 +1537,7 @@ const AdminMain: React.FC = () => {
                             value={order.status} 
                             className="admin-select" 
                             onChange={(e) => handleOrderStatusChange(order.id || order.orderId, e.target.value)}
-                            style={order.status === '취소요청' ? { borderColor: '#5c1e1e', color: '#ffcccc' } : {}}
+                            style={(order.status === '취소요청' || order.status === '교환요청' || order.status === '반품요청') ? { borderColor: '#5c1e1e', color: '#ffcccc' } : {}}
                           >
                             <option value="주문접수">주문접수</option>
                             <option value="결제완료">결제완료</option>
@@ -1459,6 +1546,8 @@ const AdminMain: React.FC = () => {
                             <option value="배송완료">배송완료</option>
                             <option value="취소요청">취소요청</option>
                             <option value="주문취소">주문취소</option>
+                            <option value="교환요청">교환요청</option>
+                            <option value="반품요청">반품요청</option>
                           </select>
                         </td>
                         <td>
@@ -1558,6 +1647,16 @@ const AdminMain: React.FC = () => {
                                 <div><strong style={{ color: '#888' }}>수령인 연락처 :</strong> {order.receiverPhone || '-'}</div>
                                 <div><strong style={{ color: '#888' }}>배송지 상세주소 :</strong> {order.deliveryAddress || '-'}</div>
                                 <div style={{ gridColumn: '1 / -1' }}><strong style={{ color: '#888' }}>배송 요청사항 :</strong> {order.deliveryMemo || '없음'}</div>
+                                {(order.status === '교환요청' || order.status === '반품요청' || order.status === '취소요청') && (
+                                  <div style={{ gridColumn: '1 / -1', marginTop: '5px', padding: '8px', background: '#331111', border: '1px solid #552222', borderRadius: '4px' }}>
+                                    <strong style={{ color: '#ffaaaa' }}>🚨 CS 신청 사유 :</strong> 
+                                    <span style={{ marginLeft: '8px', color: '#fff', fontWeight: '500' }}>
+                                      {order.deliveryMemo && order.deliveryMemo.includes('] 사유: ') 
+                                        ? order.deliveryMemo.split('] 사유: ')[1] 
+                                        : (order.deliveryMemo || '사유가 기입되지 않았습니다.')}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
 
                               <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#8f8576', letterSpacing: '0.03em' }}>

@@ -6,32 +6,71 @@ const Cart: React.FC = () => {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
-  
+  const [loading, setLoading] = useState(true);
+
   // 🌟 현재 세션에 따른 유저 고유 장바구니 스토리지 키 추출용 유틸리티 함수
   const getDynamicCartKey = () => {
-    const SESSION_KEY = 'laligne_session';
-    const sessionRaw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
-    if (sessionRaw) {
-      const session = JSON.parse(sessionRaw);
-      return `laligne_cart_${session.name || session.id || 'user'}`;
-    }
     return 'laligne_cart_guest';
   };
 
+  const getSession = () => {
+    const SESSION_KEY = 'laligne_session';
+    const sessionRaw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+    return sessionRaw ? JSON.parse(sessionRaw) : null;
+  };
+
   useEffect(() => {
-    // 🌟 [교정] 로그인 유저 고유 Key에 종속된 아이템 리스트만 정밀 스크리닝 로드
-    const dynamicKey = getDynamicCartKey();
-    const items = JSON.parse(localStorage.getItem(dynamicKey) || '[]');
-    setCartItems(items);
-    
-    // 장바구니 진입 시 해당 계정의 모든 보관 상품 전체 선택 처리
-    const allKeys = items.map((item: any) => `${item.id}_${item.size}`);
-    setCheckedKeys(allKeys);
+    const fetchCart = async () => {
+      const session = getSession();
+      
+      // 🌟 [로그인 유저] 백엔드 장바구니 DB API 조회
+      if (session && session.id) {
+        try {
+          const res = await fetch('http://localhost:8080/api/carts', {
+            headers: { 'X-User-Id': String(session.id) }
+          });
+          const result = await res.json();
+          if (result.success) {
+            // 프론트엔드 호환성을 위해 DTO 형식을 기존 localStorage 포맷에 맞춤
+            const mappedItems = result.data.map((item: any) => ({
+              cartItemId: item.cartItemId, // DB PK 추가
+              id: item.productId,
+              name: item.productName,
+              brandName: 'LA LIGNE HOMMES', // 기본값
+              price: item.basePrice + item.extraPrice,
+              size: item.size,
+              color: item.color,
+              quantity: item.quantity,
+              imageUrl: item.imageUrl,
+              optionId: item.optionId
+            }));
+            setCartItems(mappedItems);
+            
+            // 모든 항목 체크
+            const allKeys = mappedItems.map((item: any) => `${item.id}_${item.size}_${item.color}`);
+            setCheckedKeys(allKeys);
+          }
+        } catch (err) {
+          console.error('장바구니 API 로드 실패', err);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // 🌟 [비회원/게스트] 로컬 스토리지 사용
+        const items = JSON.parse(localStorage.getItem(getDynamicCartKey()) || '[]');
+        setCartItems(items);
+        const allKeys = items.map((item: any) => `${item.id}_${item.size}_${item.color}`);
+        setCheckedKeys(allKeys);
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
   }, []);
 
   // 개별 체크박스 토글 핸들러
-  const handleCheckboxToggle = (productId: number, size: string) => {
-    const targetKey = `${productId}_${size}`;
+  const handleCheckboxToggle = (productId: number, size: string, color: string = '기본') => {
+    const targetKey = `${productId}_${size}_${color}`;
     const isChecked = checkedKeys.includes(targetKey);
     setCheckedKeys(prev => 
       isChecked 
@@ -45,36 +84,73 @@ const Cart: React.FC = () => {
     if (checkedKeys.length === cartItems.length) {
       setCheckedKeys([]);
     } else {
-      const allKeys = cartItems.map((item: any) => `${item.id}_${item.size}`);
+      const allKeys = cartItems.map((item: any) => `${item.id}_${item.size}_${item.color}`);
       setCheckedKeys(allKeys);
     }
   };
 
   // 장바구니 수량 실시간 변경 핸들러
-  const updateQuantity = (index: number, newQty: number) => {
+  const updateQuantity = async (index: number, newQty: number) => {
     if (newQty < 1) return;
+    
+    const item = cartItems[index];
+    const session = getSession();
+
+    if (session && session.id && item.cartItemId) {
+      try {
+        await fetch(`http://localhost:8080/api/carts/${item.cartItemId}`, {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-User-Id': String(session.id) 
+          },
+          body: JSON.stringify({ quantity: newQty })
+        });
+      } catch (err) {
+        console.error('수량 업데이트 실패:', err);
+        return;
+      }
+    }
+
     const updated = [...cartItems];
     updated[index].quantity = newQty;
     setCartItems(updated);
     
-    // 🌟 [교정] 타 유저 저장소 훼손 방지용 고유 키 타격 백업
-    localStorage.setItem(getDynamicCartKey(), JSON.stringify(updated));
+    if (!session) {
+      localStorage.setItem(getDynamicCartKey(), JSON.stringify(updated));
+    }
   };
 
   // 장바구니 단건 삭제 핸들러
-  const removeItem = (index: number, productId: number, size: string) => {
-    const targetKey = `${productId}_${size}`;
+  const removeItem = async (index: number, productId: number, size: string, color: string = '기본') => {
+    const item = cartItems[index];
+    const session = getSession();
+
+    if (session && session.id && item.cartItemId) {
+      try {
+        await fetch(`http://localhost:8080/api/carts?ids=${item.cartItemId}`, {
+          method: 'DELETE',
+          headers: { 'X-User-Id': String(session.id) }
+        });
+      } catch (err) {
+        console.error('삭제 실패:', err);
+        return;
+      }
+    }
+
+    const targetKey = `${productId}_${size}_${color}`;
     const updated = cartItems.filter((_, i) => i !== index);
     setCartItems(updated);
     setCheckedKeys(prev => prev.filter(key => key !== targetKey));
     
-    // 🌟 [교정] 타 유저 저장소 훼손 방지용 고유 키 타격 백업
-    localStorage.setItem(getDynamicCartKey(), JSON.stringify(updated));
+    if (!session) {
+      localStorage.setItem(getDynamicCartKey(), JSON.stringify(updated));
+    }
   };
 
   // 선택 상품 금액 실시간 동적 합산 (오리지널 유지)
   const totalAmount = cartItems.reduce((sum, item) => {
-    const itemKey = `${item.id}_${item.size}`;
+    const itemKey = `${item.id}_${item.size}_${item.color}`;
     if (checkedKeys.includes(itemKey)) {
       return sum + (item.price * item.quantity);
     }
@@ -88,7 +164,7 @@ const Cart: React.FC = () => {
     e.preventDefault();
     
     const selectedItems = cartItems.filter(item => 
-      checkedKeys.includes(`${item.id}_${item.size}`)
+      checkedKeys.includes(`${item.id}_${item.size}_${item.color}`)
     );
 
     if (selectedItems.length === 0) {
@@ -98,6 +174,7 @@ const Cart: React.FC = () => {
 
     navigate('/checkout', { 
       state: { 
+
         selectedItems,
         totalAmount,
         deliveryFee
@@ -176,14 +253,15 @@ const Cart: React.FC = () => {
             </div>
           ) : (
             cartItems.map((item, idx) => {
-              const isChecked = checkedKeys.includes(`${item.id}_${item.size}`);
+              const targetKey = `${item.id}_${item.size}_${item.color || '기본'}`;
+              const isChecked = checkedKeys.includes(targetKey);
               return (
-                <div key={`${item.id}_${item.size}`} className={`cart-item-card ${isChecked ? 'item-checked-bg' : 'item-unchecked-blur'}`}>
+                <div key={targetKey} className={`cart-item-card ${isChecked ? 'item-checked-bg' : 'item-unchecked-blur'}`}>
                   <div className="cart-item-checkbox-zone">
                     <input 
                       type="checkbox" 
                       checked={isChecked}
-                      onChange={() => handleCheckboxToggle(item.id, item.size)}
+                      onChange={() => handleCheckboxToggle(item.id, item.size, item.color)}
                     />
                   </div>
                   
@@ -204,7 +282,7 @@ const Cart: React.FC = () => {
                       <span>{item.quantity}</span>
                       <button type="button" onClick={() => updateQuantity(idx, item.quantity + 1)}>+</button>
                     </div>
-                    <button type="button" onClick={() => removeItem(idx, item.id, item.size)} className="btn-item-delete">제거</button>
+                    <button type="button" onClick={() => removeItem(idx, item.id, item.size, item.color)} className="btn-item-delete">제거</button>
                   </div>
                 </div>
               );

@@ -351,7 +351,13 @@ const Signup: React.FC = () => {
       phoneVerify: !isVerified
     });
 
-    if (!lastName.trim() || !firstName.trim() || !isEmailValid || !isAddressValid || !isPwValid || !isPwMatch || !isAgreeValid || !isVerified) {
+    // 🛡️ [교정] 휴대폰 인증 여부를 별도로 분리하여 오해 방지 (비밀번호 오류와 혼동되는 문제 해결)
+    if (!isVerified) {
+      alert('휴대폰 인증을 완료해 주세요.');
+      return;
+    }
+
+    if (!lastName.trim() || !firstName.trim() || !isEmailValid || !isAddressValid || !isPwValid || !isPwMatch || !isAgreeValid) {
       alert('입력 양식이 올바르지 않거나 보안 조합(최소 8자, 특수문자 필수)이 충족되지 않았습니다.');
       return; 
     }
