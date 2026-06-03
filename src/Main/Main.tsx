@@ -41,7 +41,7 @@ const Main: React.FC = () => {
 
   const loadData = () => {
     const fetchBanners = (type: string, setter: any) => {
-      fetch(`http://localhost:8080/api/banners/${type.toLowerCase()}`)
+      fetch(`${import.meta.env.VITE_API_URL}/api/banners/${type.toLowerCase()}`)
         .then(res => res.json())
         .then(result => {
           if (result.success) {
@@ -54,7 +54,7 @@ const Main: React.FC = () => {
     fetchBanners('HERO', setHeroBanners);
     fetchBanners('EDITORIAL', setEditorialBanners);
 
-    fetch('http://localhost:8080/api/categories')
+    fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
       .then(res => res.json())
       .then(result => {
         if (result.data) {
@@ -63,7 +63,7 @@ const Main: React.FC = () => {
       })
       .catch(err => console.error('동적 카테고리 통신 대기 중...', err));
 
-    fetch('http://localhost:8080/api/products')
+    fetch(`${import.meta.env.VITE_API_URL}/api/products`)
       .then(res => res.json())
       .then(result => {
         if (result.data) {
@@ -211,7 +211,7 @@ const Main: React.FC = () => {
             {heroBanners.length > 0 && (
               <div style={{ position: 'absolute', left: '50%', top: '15%', transform: 'translateX(-50%)', width: '38%', height: '68%', boxShadow: '0 40px 80px rgba(0,0,0,0.5)', zIndex: 10, overflow: 'hidden', backgroundColor: 'rgba(17, 17, 17, 0.2)' }}>
                 {heroBanners.map((banner, idx) => (
-                  <img key={banner.id} src={(banner?.imageUrl || '').startsWith('http') ? banner.imageUrl : `http://localhost:8080${banner?.imageUrl || ''}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', inset: 0, opacity: currentHeroIdx === idx ? 1 : 0, transition: 'opacity 0.8s ease-in-out', zIndex: currentHeroIdx === idx ? 11 : 0 }} />
+                  <img key={banner.id} src={(banner?.imageUrl || '').startsWith('http') ? banner.imageUrl : `${import.meta.env.VITE_API_URL}${banner?.imageUrl || ''}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', inset: 0, opacity: currentHeroIdx === idx ? 1 : 0, transition: 'opacity 0.8s ease-in-out', zIndex: currentHeroIdx === idx ? 11 : 0 }} />
                 ))}
               </div>
             )}
@@ -280,7 +280,7 @@ const Main: React.FC = () => {
                         <div className="product-img-wrap">
                           <div
                             className={`product-img-inner prod-${(idx % 6) + 1}`}
-                            style={product.imageUrl ? { backgroundImage: `url("${product.imageUrl.startsWith('http') ? product.imageUrl : `http://localhost:8080${product.imageUrl}`}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                            style={product.imageUrl ? { backgroundImage: `url("${product.imageUrl.startsWith('http') ? product.imageUrl : `${import.meta.env.VITE_API_URL}${product.imageUrl}`}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
                             role="img"
                             aria-label={product.name}
                           ></div>
@@ -364,7 +364,7 @@ const Main: React.FC = () => {
             {editorialBanners.length > 0 && (
               <div style={{ position: 'absolute', left: '50%', top: '15%', transform: 'translateX(-50%)', width: '38%', height: '68%', boxShadow: '0 40px 80px rgba(0,0,0,0.5)', zIndex: 10, overflow: 'hidden', backgroundColor: 'rgba(17, 17, 17, 0.2)' }}>
                 {editorialBanners.map((banner, idx) => (
-                  <img key={banner.id} src={(banner?.imageUrl || '').startsWith('http') ? banner.imageUrl : `http://localhost:8080${banner?.imageUrl || ''}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', inset: 0, opacity: currentEditorialIdx === idx ? 1 : 0, transition: 'opacity 0.8s ease-in-out', zIndex: currentEditorialIdx === idx ? 11 : 0 }} />
+                  <img key={banner.id} src={(banner?.imageUrl || '').startsWith('http') ? banner.imageUrl : `${import.meta.env.VITE_API_URL}${banner?.imageUrl || ''}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', inset: 0, opacity: currentEditorialIdx === idx ? 1 : 0, transition: 'opacity 0.8s ease-in-out', zIndex: currentEditorialIdx === idx ? 11 : 0 }} />
                 ))}
               </div>
             )}

@@ -33,7 +33,7 @@ const SpeedDial: React.FC = () => {
         if (session && session.id) {
           // 1. [로그인 회원] 백엔드 DB에서 최신 목록 인양
           try {
-            const res = await fetch(`http://localhost:8080/api/products/recent?userId=${session.id}`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/recent?userId=${session.id}`);
             const result = await res.json();
             if (result.success && Array.isArray(result.data)) {
               setRecentItems(result.data);
@@ -104,7 +104,7 @@ const SpeedDial: React.FC = () => {
               >
                 <div 
                   className="recent-item-img" 
-                  style={{ backgroundImage: `url("${item.imageUrl.startsWith('http') ? item.imageUrl : `http://localhost:8080${item.imageUrl}`}")` }}
+                  style={{ backgroundImage: `url("${item.imageUrl.startsWith('http') ? item.imageUrl : `${import.meta.env.VITE_API_URL}${item.imageUrl}`}")` }}
                 ></div>
                 <div className="recent-item-info">
                   <p className="name">{item.name}</p>

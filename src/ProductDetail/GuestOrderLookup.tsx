@@ -31,7 +31,7 @@ const GuestOrderLookup: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/orders/non-member?orderNumber=${encodeURIComponent(orderNumber)}&password=${encodeURIComponent(password)}`
+        `${import.meta.env.VITE_API_URL}/api/orders/non-member?orderNumber=${encodeURIComponent(orderNumber)}&password=${encodeURIComponent(password)}`
       );
       const result = await response.json();
 

@@ -16,7 +16,7 @@ const PaymentSuccess: React.FC = () => {
     const finalizeOrder = async () => {
       try {
         // 1. 토스페이먼츠 결제 승인 (백엔드 확인)
-        const confirmRes = await fetch('http://localhost:8080/api/payments/toss/confirm', {
+        const confirmRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/toss/confirm`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ paymentKey, orderId, amount })
@@ -39,7 +39,7 @@ const PaymentSuccess: React.FC = () => {
           const session = sessionRaw ? JSON.parse(sessionRaw) : null;
 
           // 3. 실제 주문 생성 (우리 DB 저장)
-          const orderRes = await fetch(`http://localhost:8080/api/orders?paymentMethod=CARD&email=${encodeURIComponent(session?.email || '')}`, {
+          const orderRes = await fetch(`${import.meta.env.VITE_API_URL}/api/orders?paymentMethod=CARD&email=${encodeURIComponent(session?.email || '')}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -63,7 +63,7 @@ const PaymentSuccess: React.FC = () => {
                 
               if (cartItemIds.length > 0) {
                 try {
-                  fetch(`http://localhost:8080/api/carts?ids=${cartItemIds.join(',')}`, {
+                  fetch(`${import.meta.env.VITE_API_URL}/api/carts?ids=${cartItemIds.join(',')}`, {
                     method: 'DELETE',
                     headers: { 'X-User-Id': String(session.id) }
                   });

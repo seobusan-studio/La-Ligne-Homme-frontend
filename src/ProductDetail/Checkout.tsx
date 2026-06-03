@@ -248,7 +248,7 @@ const Checkout: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/orders?paymentMethod=${encodeURIComponent(paymentMethod)}&email=${encodeURIComponent(session?.email || '')}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders?paymentMethod=${encodeURIComponent(paymentMethod)}&email=${encodeURIComponent(session?.email || '')}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderRequestDto)
@@ -288,7 +288,7 @@ const Checkout: React.FC = () => {
             
           if (cartItemIds.length > 0) {
             try {
-              fetch(`http://localhost:8080/api/carts?ids=${cartItemIds.join(',')}`, {
+              fetch(`${import.meta.env.VITE_API_URL}/api/carts?ids=${cartItemIds.join(',')}`, {
                 method: 'DELETE',
                 headers: { 'X-User-Id': String(session.id) }
               });

@@ -48,7 +48,7 @@ export const FindPasswordModal: React.FC<FindPasswordModalProps> = ({ isOpen, on
        * 💡 [스프링부트 백엔드 오피셜 파이프라인 연격 격발]
        * UserController의 POST /api/auth/find-password 라인을 정밀 타격합니다.
        * ========================================================================= */
-      const response = await fetch('http://localhost:8080/api/auth/find-password', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/find-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

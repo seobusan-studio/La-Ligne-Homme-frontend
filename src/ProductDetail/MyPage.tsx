@@ -46,7 +46,7 @@ const MyPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/orders/${claimOrderId}/claim`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${claimOrderId}/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ claimType, reason: claimReason })
@@ -86,7 +86,7 @@ const MyPage: React.FC = () => {
     /* =========================================================================
      * 🚨 [기존 백엔드 연동 원본 사수] 실시간 주문 데이터 필터링 라인
      * ========================================================================= */
-    fetch('http://localhost:8080/api/admin/orders/list')
+    fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/list`)
       .then(res => res.json())
       .then(result => {
         const myData = (result.data || result || []).filter(
@@ -139,7 +139,7 @@ const MyPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:8080/api/users/password', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/password`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -174,7 +174,7 @@ const MyPage: React.FC = () => {
     if (!window.confirm('주문을 취소하시겠습니까? (관리자 확인 후 최종 결제 취소가 진행됩니다)')) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/orders/${orderId}/status`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: '취소요청' })
@@ -481,7 +481,7 @@ const MyPage: React.FC = () => {
               <div key={prod.id} className="recent-prod-card" onClick={() => navigate(`/product/${prod.id}`)}>
                 <div 
                   className="recent-card-img" 
-                  style={{ backgroundImage: `url("${prod.imageUrl?.startsWith('http') ? prod.imageUrl : `http://localhost:8080${prod.imageUrl}`}")` }}
+                  style={{ backgroundImage: `url("${prod.imageUrl?.startsWith('http') ? prod.imageUrl : `${import.meta.env.VITE_API_URL}${prod.imageUrl}`}")` }}
                 ></div>
                 <div className="recent-card-info">
                   <p className="recent-card-name">{prod.name}</p>

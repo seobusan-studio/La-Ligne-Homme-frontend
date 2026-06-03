@@ -41,14 +41,14 @@ const AllProducts: React.FC = () => {
 
   useEffect(() => {
     // 카테고리 로드
-    fetch('http://localhost:8080/api/categories')
+    fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
       .then(res => res.json())
       .then(result => {
         if (result.data) setCategories(result.data);
       });
 
     // 전체 상품 로드
-    fetch('http://localhost:8080/api/products')
+    fetch(`${import.meta.env.VITE_API_URL}/api/products`)
       .then(res => res.json())
       .then(result => {
         if (result.data) {
@@ -116,7 +116,7 @@ const AllProducts: React.FC = () => {
                     <div className="all-product-img-wrap">
                       <div 
                         className="all-product-img"
-                        style={{ backgroundImage: `url("${product.imageUrl?.startsWith('http') ? product.imageUrl : `http://localhost:8080${product.imageUrl}`}")` }}
+                        style={{ backgroundImage: `url("${product.imageUrl?.startsWith('http') ? product.imageUrl : `${import.meta.env.VITE_API_URL}${product.imageUrl}`}")` }}
                       ></div>
                     </div>
                     <div className="all-product-info">

@@ -26,7 +26,7 @@ const Cart: React.FC = () => {
       // 🌟 [로그인 유저] 백엔드 장바구니 DB API 조회
       if (session && session.id) {
         try {
-          const res = await fetch('http://localhost:8080/api/carts', {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/carts`, {
             headers: { 'X-User-Id': String(session.id) }
           });
           const result = await res.json();
@@ -98,7 +98,7 @@ const Cart: React.FC = () => {
 
     if (session && session.id && item.cartItemId) {
       try {
-        await fetch(`http://localhost:8080/api/carts/${item.cartItemId}`, {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/carts/${item.cartItemId}`, {
           method: 'PATCH',
           headers: { 
             'Content-Type': 'application/json',
@@ -128,7 +128,7 @@ const Cart: React.FC = () => {
 
     if (session && session.id && item.cartItemId) {
       try {
-        await fetch(`http://localhost:8080/api/carts?ids=${item.cartItemId}`, {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/carts?ids=${item.cartItemId}`, {
           method: 'DELETE',
           headers: { 'X-User-Id': String(session.id) }
         });
@@ -267,7 +267,7 @@ const Cart: React.FC = () => {
                   
                   <div 
                     className="cart-item-img" 
-                    style={{ backgroundImage: `url("${item.imageUrl.startsWith('http') ? item.imageUrl : `http://localhost:8080${item.imageUrl}`}")` }}
+                    style={{ backgroundImage: `url("${item.imageUrl.startsWith('http') ? item.imageUrl : `${import.meta.env.VITE_API_URL}${item.imageUrl}`}")` }}
                   ></div>
                   <div className="cart-item-details">
                     <span className="cart-item-brand">{item.brandName}</span>

@@ -45,7 +45,7 @@ const ProductDetail: React.FC = () => {
 
     const fetchLatestStockFromDb = async (isInitial: boolean = false) => {
       try {
-        const res = await fetch(`http://localhost:8080/api/products/${id}`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`);
         const result = await res.json();
         
         if (result.data && isMounted) {
@@ -73,7 +73,7 @@ const ProductDetail: React.FC = () => {
 
             if (session && session.id) {
               // 1. [로그인 회원] 백엔드 DB에 실시간 기록 적재
-              fetch('http://localhost:8080/api/products/recent', {
+              fetch(`${import.meta.env.VITE_API_URL}/api/products/recent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: session.id, productId: loadedProduct.id })
@@ -199,7 +199,7 @@ const ProductDetail: React.FC = () => {
     // 🌟 로그인 회원일 경우 백엔드 DB 장바구니로 연동
     if (session && session.id) {
       try {
-        const res = await fetch('http://localhost:8080/api/carts', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/carts`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -326,7 +326,7 @@ const ProductDetail: React.FC = () => {
             <div 
               className="main-viewer-img"
               style={{ 
-                backgroundImage: `url("${mainImage.startsWith('http') ? mainImage : `http://localhost:8080${mainImage}`}")`,
+                backgroundImage: `url("${mainImage.startsWith('http') ? mainImage : `${import.meta.env.VITE_API_URL}${mainImage}`}")`,
                 backgroundSize: 'contain', 
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat'
@@ -338,7 +338,7 @@ const ProductDetail: React.FC = () => {
           {product.imageUrls && product.imageUrls.length > 0 && (
             <div className="sub-thumbnails-strip">
               {product.imageUrls.map((url, idx) => {
-                const fullUrl = url.startsWith('http') ? url : `http://localhost:8080${url}`;
+                const fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
                 return (
                   <div 
                     key={idx} 
