@@ -86,7 +86,8 @@ const AdminMain: React.FC = () => {
     totalRefund: 0,
     netProfit: 0,
     orderCount: 0,
-    dailySales: {}
+    dailySales: {},
+    lowStockItems: [] as any[]
   });
 
   // 매출 정산 뷰 모드 (일/월/년) + 검색 필터

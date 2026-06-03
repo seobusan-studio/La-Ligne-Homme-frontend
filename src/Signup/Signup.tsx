@@ -550,7 +550,7 @@ const Signup: React.FC = () => {
                         onClick={handleVerifySmsCode}
                         style={{
                           background: 'var(--color-gold, #8f8576)', color: '#fff', border: 'none', padding: '0 16px',
-                          fontSize: '12px', fontweight: '600', cursor: 'pointer', whiteSpace: 'nowrap',
+                          fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap',
                           minWidth: '85px'
                         }}
                       >
@@ -560,7 +560,7 @@ const Signup: React.FC = () => {
                   )}
                   
                   {(!agreeTerms || !agreePrivacy) && !isVerified && (
-                    <span style={{ color: '#e67e22', fontSize: '11px', marginTop: '4px', display: 'block', fontweight: '500' }}>
+                    <span style={{ color: '#e67e22', fontSize: '11px', marginTop: '4px', display: 'block', fontWeight: '500' }}>
                       💡 하단의 [이용약관 및 개인정보 처리방침]에 필수 동의하셔야 인증번호 발송이 가능합니다.
                     </span>
                   )}
@@ -588,7 +588,7 @@ const Signup: React.FC = () => {
                       onClick={handleOpenPostcode} 
                       style={{ 
                         background: '#111', color: '#fff', border: '1px solid #8f8576', padding: '0 16px', 
-                        fontSize: '12px', fontweight: '600', cursor: 'pointer', whiteSpace: 'nowrap', letterSpacing: '0.05em'
+                        fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', letterSpacing: '0.05em'
                       }}
                     >
                       주소 검색
