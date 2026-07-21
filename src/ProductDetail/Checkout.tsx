@@ -514,7 +514,10 @@ const Checkout: React.FC = () => {
                 }}
               >
                 <option value="무통장입금">무통장입금 (가상계좌 발송)</option>
+                {/* 🚧 [토스페이먼츠 승인 대기중] 온라인 결제 임시 비활성화(테스트 모드 결제창 노출 방지).
+                    승인 완료 후 아래 한 줄 주석을 해제하면 즉시 복구됩니다.
                 <option value="ONLINE_PAYMENT">온라인 결제 (신용카드 / 간편결제)</option>
+                */}
               </select>
             </div>
 
