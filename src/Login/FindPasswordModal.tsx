@@ -60,7 +60,7 @@ export const FindPasswordModal: React.FC<FindPasswordModalProps> = ({ isOpen, on
       const result = await response.json();
 
       if (response.ok && (result.status === 'SUCCESS' || result.success)) {
-        alert('임시 비밀번호가 카카오 알림톡(pw_find_01)으로 발송되었습니다.\n확인 후 로그인해 주세요.');
+        alert('임시 비밀번호를 카카오 알림톡으로 발송했습니다.\n확인 후 로그인해 주세요.');
         setEmail('');
         setPhone('');
         onClose(); // 성공 시 모달창 폐쇄
@@ -68,7 +68,7 @@ export const FindPasswordModal: React.FC<FindPasswordModalProps> = ({ isOpen, on
         setErrorMsg(result.message || '회원 정보가 일치하지 않거나 오류가 발생했습니다.');
       }
     } catch (err) {
-      setErrorMsg('인증 코어 서버 통신 실패. 백엔드 가동 상태를 확인하세요.');
+      setErrorMsg('임시 비밀번호를 발급하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +82,7 @@ export const FindPasswordModal: React.FC<FindPasswordModalProps> = ({ isOpen, on
           <p className="modal-eyebrow">Find Password</p>
           <h2 className="modal-title">비밀번호 찾기</h2>
           <p className="modal-desc">
-            가입하신 이메일 계정과 휴대폰 번호를 교차 입력하시면 보안을 위한 임시 비밀번호를 알림톡으로 전송해 드립니다.
+            가입하실 때 사용한 이메일과 휴대폰 번호를 입력하시면 임시 비밀번호를 알림톡으로 보내 드립니다.
           </p>
         </div>
 

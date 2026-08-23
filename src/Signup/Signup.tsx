@@ -176,7 +176,7 @@ const Signup: React.FC = () => {
         setErrors(prev => ({ ...prev, email: true }));
       }
     } catch (err) {
-      setEmailMessage('서버 통신 실패. 백엔드 상태를 확인하세요.');
+      setEmailMessage('이메일을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -217,13 +217,13 @@ const Signup: React.FC = () => {
         setIsCodeSent(true);
         setIsSmsCooltime(true); // 격발 성공 즉시 60초 버튼 락(LOCK) 가동
         setTimer(180); // 3분 세팅 리로드
-        alert('인증번호가 발송되었습니다. (테스트 모드 시 백엔드 콘솔창 확인)');
+        alert('인증번호를 발송했습니다. 문자를 확인해 주세요.');
       } else {
         const errorData = await response.json();
         setSmsError(errorData.message || '인증번호 발송 실패. 과도한 요청이 감지되었습니다.');
       }
     } catch (err) {
-      setSmsError('인증 서버 통신 실패. 백엔드 가동 상태를 확인하세요.');
+      setSmsError('인증번호를 발송하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -260,7 +260,7 @@ const Signup: React.FC = () => {
         setSmsError(result.message || '인증번호가 일치하지 않습니다.');
       }
     } catch (err) {
-      setSmsError('인증 서버 검증 통신 실패.');
+      setSmsError('인증번호를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -390,7 +390,7 @@ const Signup: React.FC = () => {
         alert(result.message || '회원가입 처리 중 알 수 없는 오류가 발생했습니다.');
       }
     } catch (err) {
-      alert('라  린느 인증 백엔드 서버와 통신할 수 없습니다.');
+      alert('회원가입을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 

@@ -38,10 +38,11 @@ const GuestOrderLookup: React.FC = () => {
       if (response.ok && result.status !== 'ERROR') {
         setOrderData(result.data);
       } else {
-        alert(result.message || '주문 정보가 일치하지 않거나 패스워드 장벽을 넘지 못했습니다.');
+        alert(result.message || '주문 번호 또는 비밀번호가 일치하지 않습니다.');
       }
     } catch (err) {
-      alert('백엔드 서버 연동 레이어 통신 실패');
+      console.error('비회원 주문 조회 실패', err);
+      alert('주문 내역을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ const GuestOrderLookup: React.FC = () => {
     <div className="lookup-page-container">
       <header className="lookup-header">
         <h1>GUEST ORDER TRACKING</h1>
-        <p>비회원 주문서 및 실시간 배송 흐름 교차 검증 센터입니다.</p>
+        <p>주문 번호와 비밀번호로 주문 내역과 배송 상태를 확인하실 수 있습니다.</p>
         {/* 🌟 홈으로 돌아가기 버튼 추가 */}
         <button type="button" className="btn-home-return" onClick={() => navigate('/')}>
           메인 홈으로 돌아가기
@@ -60,15 +61,15 @@ const GuestOrderLookup: React.FC = () => {
 
       <div className="lookup-main-wrapper">
         <form onSubmit={handleLookupSubmit} className="lookup-form-card">
-          <h3>비회원 인증조회 명세</h3>
+          <h3>비회원 주문 조회</h3>
           <div className="lookup-input-group">
             <label>주문 번호 (예: LLH-XXXXXX)</label>
-            <input 
-              type="text" 
-              value={orderNumber} 
-              onChange={(e) => setOrderNumber(e.target.value)} 
-              placeholder="발급받으신 고유 주문코드 기입" 
-              required 
+            <input
+              type="text"
+              value={orderNumber}
+              onChange={(e) => setOrderNumber(e.target.value)}
+              placeholder="문자로 받으신 주문 번호를 입력해 주세요"
+              required
             />
           </div>
           <div className="lookup-input-group">
@@ -82,14 +83,14 @@ const GuestOrderLookup: React.FC = () => {
             />
           </div>
           <button type="submit" className="btn-lookup-execute" disabled={loading}>
-            {loading ? '교차 검증 중...' : '주문 내역 조회하기'}
+            {loading ? '조회 중...' : '주문 내역 조회하기'}
           </button>
         </form>
 
         <div className="lookup-result-section">
           {orderData ? (
             <div className="receipt-card animate-fade">
-              <h3>INVOICE SPEC (주문 영수증 명세)</h3>
+              <h3>ORDER DETAILS (주문 상세 내역)</h3>
               <div className="receipt-row">
                 <span>주문 번호</span>
                 <span className="bold-text">{orderData.orderNumber}</span>
@@ -103,12 +104,12 @@ const GuestOrderLookup: React.FC = () => {
                 <span>{orderData.deliveryAddress}</span>
               </div>
               <div className="receipt-row">
-                <span>최종 정산 금액</span>
+                <span>결제 금액</span>
                 <span className="price-tag">₩{Number(orderData.totalPrice).toLocaleString()}</span>
               </div>
               
               <div className="receipt-row" style={{ marginTop: '15px' }}>
-                <span>실시간 배송 동향</span>
+                <span>배송 상태</span>
                 <span className={`status-badge ${orderData.status === 'DELIVERED' ? 'delivered' : 'shipping'}`}>
                   {getStatusKr(orderData.status)}
                 </span>

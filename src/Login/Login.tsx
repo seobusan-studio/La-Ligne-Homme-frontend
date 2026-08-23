@@ -93,7 +93,7 @@ const Login: React.FC = () => {
       }
     } catch (err) {
       console.error('Login request error:', err);
-      alert('백엔드 서버 연동 상태를 체크하십시오.');
+      alert('로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
