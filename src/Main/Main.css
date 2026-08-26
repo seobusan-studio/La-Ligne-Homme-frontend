@@ -186,6 +186,8 @@
 .main-page-box summary::after { content: '+'; font-size: 1.4rem; font-weight: 300; color: var(--color-gold); flex-shrink: 0; transition: transform 0.3s; }
 .main-page-box details[open] summary::after { transform: rotate(45deg); }
 .main-page-box details p { padding: 0 0 1.75rem; font-size: 0.875rem; font-weight: 300; line-height: 1.9; color: var(--color-text-sub); }
+/* 답변이 여러 문단일 때 문단 사이는 좁게, 마지막 문단만 아래 여백을 유지합니다. */
+.main-page-box details p:not(:last-child) { padding-bottom: 0.6rem; }
 
 /* ─── Final CTA ──────────────────────────────────── */
 .main-page-box .final-cta { background: var(--color-bg); text-align: center; }

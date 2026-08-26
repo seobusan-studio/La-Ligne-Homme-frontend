@@ -428,6 +428,9 @@ const Main: React.FC = () => {
                 <details>
                   <summary>배송은 얼마나 걸리나요?</summary>
                   <p>
+                    배송방법: 택배 / 배송지역: 전국 / 배송비: 무료
+                  </p>
+                  <p>
                     결제 확인 후 영업일 기준 2~3일 이내 출고됩니다.
                     제주 및 도서 산간 지역은 추가 2일 정도 소요될 수 있습니다.
                     주문 후 발송 완료 문자를 통해 배송 현황을 확인하실 수 있습니다.
@@ -436,8 +439,19 @@ const Main: React.FC = () => {
                 <details>
                   <summary>교환 및 반품이 가능한가요?</summary>
                   <p>
-                    수령 후 7일 이내 교환 및 반품 가능합니다.
-                    단, 착용 흔적이 있거나 태그가 제거된 경우에는 교환/반품이 어렵습니다.
+                    수령하신 날을 포함하여 7일 이내에 요청해 주셔야 교환 및 반품이 가능합니다.
+                    단, 착용 흔적이 있거나 태그가 제거된 경우, 오염 및 훼손이 있는 경우에는
+                    교환/반품이 어렵습니다.
+                  </p>
+                  <p>
+                    단순 변심에 의한 교환 및 반품은 왕복 배송비 5,000원이 고객 부담으로 청구됩니다.
+                    (사이즈 교환, 색상 교환 포함)
+                    상품 불량 또는 오배송의 경우에는 배송비를 저희가 부담합니다.
+                  </p>
+                  <p>
+                    반품주소: 부산광역시 중구 광복로49번길 33 (제니스)
+                  </p>
+                  <p>
                     자세한 사항은 고객센터로 문의 주시기 바랍니다.
                   </p>
                 </details>
@@ -529,7 +543,7 @@ const Main: React.FC = () => {
             <div className="footer-biz-info">
               <span><strong>상호명</strong> 제니스</span>
               <span><strong>대표</strong> 김결</span>
-              <span><strong>주소</strong> 중구 광복로49번길 33</span>
+              <span><strong>주소</strong> 부산광역시 중구 광복로49번길 33</span>
               <span><strong>전화</strong> 050.6977.2787</span>
               <span><strong>이메일</strong> busanfull6567@naver.com</span>
               <span><strong>사업자등록번호</strong> 737-68-00698</span>
