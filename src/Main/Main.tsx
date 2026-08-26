@@ -449,7 +449,7 @@ const Main: React.FC = () => {
                     상품 불량 또는 오배송의 경우에는 배송비를 저희가 부담합니다.
                   </p>
                   <p>
-                    반품주소: 부산광역시 중구 광복로49번길 33 (제니스)
+                    반품주소: 부산광역시 중구 광복로49번길 33, 1층 (제니스)
                   </p>
                   <p>
                     자세한 사항은 고객센터로 문의 주시기 바랍니다.
@@ -543,8 +543,8 @@ const Main: React.FC = () => {
             <div className="footer-biz-info">
               <span><strong>상호명</strong> 제니스</span>
               <span><strong>대표</strong> 김결</span>
-              <span><strong>주소</strong> 부산광역시 중구 광복로49번길 33</span>
-              <span><strong>전화</strong> 050.6977.2787</span>
+              <span><strong>주소</strong> 부산광역시 중구 광복로49번길 33, 1층</span>
+              <span><strong>전화</strong> 010.5652.2787</span>
               <span><strong>이메일</strong> busanfull6567@naver.com</span>
               <span><strong>사업자등록번호</strong> 737-68-00698</span>
               <span><strong>통신판매업신고번호</strong> 제 2025-부산중구-0216호</span>
