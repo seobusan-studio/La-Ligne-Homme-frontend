@@ -123,7 +123,7 @@ const ProductDetail: React.FC = () => {
   }, [id]);
 
   if (loading) return <div className="detail-loading">La Ligne Hommes 프리미엄 컬렉션 로딩 중...</div>;
-  if (!product) return <div className="detail-error">존재하지 않거나 보관함 처리된 상품입니다.</div>;
+  if (!product) return <div className="detail-error">현재 판매하지 않는 상품입니다.</div>;
 
   // 🌟 [교정] 3초 폴링 리로드 시 튕김을 막기 위해 확실하게 String 형으로 일치화하여 탐색 수행
   const currentSelectedOption = product.options?.find(opt => 
@@ -373,7 +373,7 @@ const ProductDetail: React.FC = () => {
             </div>
             <div className="guide-row">
               <span className="guide-label">배송비</span>
-              <span className="guide-value">₩0 (라 린느 마스터 회원 전품목 전격 무료배송 혜택선 가동)</span>
+              <span className="guide-value">₩0 (전 품목 무료배송)</span>
             </div>
             <div className="guide-row">
               <span className="guide-label">국내배송</span>

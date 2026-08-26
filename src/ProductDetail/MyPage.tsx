@@ -60,7 +60,8 @@ const MyPage: React.FC = () => {
         alert('요청 처리 중 오류가 발생했습니다.');
       }
     } catch (err) {
-      alert('서버 통신 실패');
+      console.error('교환/반품 신청 실패', err);
+      alert('신청을 접수하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -164,7 +165,7 @@ const MyPage: React.FC = () => {
         setPwError(result.message || '현재 비밀번호가 일치하지 않습니다.');
       }
     } catch (err) {
-      setPwError('비밀번호 변경 코어 서버와의 통신에 실패했습니다.');
+      setPwError('비밀번호를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setIsSubmitting(false);
     }
@@ -187,7 +188,8 @@ const MyPage: React.FC = () => {
         alert('취소 요청 중 오류가 발생했습니다.');
       }
     } catch (err) {
-      alert('백엔드 서버 통신 실패');
+      console.error('주문 취소 요청 실패', err);
+      alert('취소 요청을 접수하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -293,7 +295,7 @@ const MyPage: React.FC = () => {
             {pwSuccess && <span className="pw-status-success-hint">✓ {pwSuccess}</span>}
 
             <button type="submit" disabled={isSubmitting} className="btn-pw-amend-confirm-trigger">
-              {isSubmitting ? '보안 데이터 암호화 중...' : '비밀번호 변경 완료'}
+              {isSubmitting ? '변경 중...' : '비밀번호 변경 완료'}
             </button>
           </form>
         </section>
@@ -306,7 +308,7 @@ const MyPage: React.FC = () => {
         <div className="orders-table-wrapper">
           {loading ? (
             <div className="table-placeholder">
-              실시간 주문 데이터 라우팅 중...
+              주문 내역을 불러오는 중입니다...
             </div>
           ) : orderList.length === 0 ? (
             <div className="table-placeholder">

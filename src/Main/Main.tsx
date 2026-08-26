@@ -220,7 +220,7 @@ const Main: React.FC = () => {
           <div className="hero-content">
             <p className="hero-eyebrow fade-in">Nouvelle Collection</p>
             <h1 id="hero-heading" className="hero-title fade-in fade-in-delay-1">남성의 선,<br /><em>La Ligne</em></h1>
-            <p className="hero-subtitle fade-in fade-in-delay-2">라 린느 옴므는 프랑스어로 '남성의 선'을 의미합니다.<br />깔끔한 실루엣 and 미니멀한 디자인으로 현대 남성의 감각을 완성합니다.</p>
+            <p className="hero-subtitle fade-in fade-in-delay-2">라 린느 옴므는 프랑스어로 '남성의 선'을 의미합니다.<br />깔끔한 실루엣과 미니멀한 디자인으로 현대 남성의 감각을 완성합니다.</p>
             <div className="hero-cta-group fade-in fade-in-delay-3">
               <a href="#collection" className="btn-primary" onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>컬렉션 보기</a>
               <a href="#brand" className="btn-secondary" onClick={(e) => { e.preventDefault(); scrollToSection('brand'); }}>브랜드 스토리</a>
@@ -234,7 +234,7 @@ const Main: React.FC = () => {
               <p className="section-label fade-in">Maison La Ligne Hommes</p>
               <h2 id="brand-heading" className="section-title fade-in fade-in-delay-1">세련되고 감각적인 무드,<br /><em>미니멀의 철학</em></h2>
               <div className="brand-divider fade-in"></div>
-              <p className="section-body fade-in fade-in-delay-2">'라 린느 옴므(La Ligne Hommes)'는 세련되고 감각적인 무드를 지향하는 남성 컨템포러리 패션 브랜드입니다.<br />깔끔한 실루엣 and 미니멀한 디자인이 특징이며, 정제된 선 하나에 담긴 감각이 현대 남성의 일상을 특별하게 만들어 드립니다.</p>
+              <p className="section-body fade-in fade-in-delay-2">'라 린느 옴므(La Ligne Hommes)'는 세련되고 감각적인 무드를 지향하는 남성 컨템포러리 패션 브랜드입니다.<br />깔끔한 실루엣과 미니멀한 디자인이 특징이며, 정제된 선 하나에 담긴 감각이 현대 남성의 일상을 특별하게 만들어 드립니다.</p>
             </div>
           </div>
         </section>
@@ -386,7 +386,7 @@ const Main: React.FC = () => {
           <div className="container">
             <p className="section-label fade-in">Our Principles</p>
             <h2 id="values-heading" className="section-title fade-in fade-in-delay-1">
-              brand가 지키는 것들
+              브랜드가 지키는 것들
             </h2>
 
             <div className="values-grid">
@@ -489,7 +489,7 @@ const Main: React.FC = () => {
           <div className="footer-top">
             <div className="footer-brand">
               <a href="/" className="logo">La Ligne Hommes<span>라 린느 옴므</span></a>
-              <p className="footer-tagline">세련되고 감각적인 무드를 지향하는 남성 컨템포러리 패션 brand</p>
+              <p className="footer-tagline">세련되고 감각적인 무드를 지향하는 남성 컨템포러리 패션 브랜드</p>
             </div>
             <div className="footer-col">
               <h4>쇼핑</h4>
@@ -510,7 +510,7 @@ const Main: React.FC = () => {
               </div>
             )}
             <div className="footer-col">
-              <h4>brand</h4>
+              <h4>브랜드</h4>
               <ul>
                 <li><a href="#brand" onClick={(e) => { e.preventDefault(); scrollToSection('brand'); }}>브랜드 스토리</a></li>
                 <li><a href="#collection" onClick={(e) => { e.preventDefault(); scrollToSection('collection'); }}>컬렉션</a></li>

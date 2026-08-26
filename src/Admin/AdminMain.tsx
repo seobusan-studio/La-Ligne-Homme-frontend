@@ -264,9 +264,9 @@ const AdminMain: React.FC = () => {
         formData.append('image', file);
         await fetch(`${import.meta.env.VITE_API_URL}/api/banners/${type.toLowerCase()}`, { method: 'POST', body: formData });
       }
-      alert(`${validImages.length}장의 사진이 [${type}] 섹션에 즉시 등록되었습니다.`);
+      alert(`사진 ${validImages.length}장을 등록했습니다.`);
       loadBackendData();
-    } catch (e) { alert(`${type} 업로드 중 통신 장애 발생`); }
+    } catch (e) { alert('사진을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
   };
 
   const handleDeleteBanner = async (type: string, id: number) => {
@@ -278,7 +278,7 @@ const AdminMain: React.FC = () => {
       if (response.ok) {
         loadBackendData();
       }
-    } catch (e) { alert('배너 삭제 통신 실패'); }
+    } catch (e) { alert('배너를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
   };
 
   const onDragStartBanner = (index: number) => {
@@ -386,11 +386,11 @@ const AdminMain: React.FC = () => {
         })
       });
       if (response.ok) {
-        alert(`[${newCatName}] 카테고리가 실시간으로 추가 개통되었습니다.`);
+        alert(`[${newCatName}] 카테고리를 추가했습니다.`);
         setNewCatName('');
         loadBackendData();
       }
-    } catch (e) { alert('카테고리 생성 백엔드 통신 실패'); }
+    } catch (e) { alert('카테고리를 추가하지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
   };
 
   const handleDeleteCategory = async (id: number, name: string) => {
@@ -413,11 +413,11 @@ const AdminMain: React.FC = () => {
       return;
     }
 
-    if (!window.confirm(`[${name}] 카테고리를 정말 폐쇄하시겠습니까?`)) return;
+    if (!window.confirm(`[${name}] 카테고리를 삭제하시겠습니까?`)) return;
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/categories/${id}`, { method: 'DELETE' });
       if (response.ok) {
-        alert('카테고리가 시스템 데이터베이스에서 안전하게 제거되었습니다.');
+        alert('카테고리를 삭제했습니다.');
         
         // 삭제 후 남은 카테고리들 순서 재정렬
         const remainingCats = [...categories]
@@ -429,7 +429,7 @@ const AdminMain: React.FC = () => {
           loadBackendData();
         }
       }
-    } catch (e) { alert('카테고리 삭제 백엔드 통신 실패'); }
+    } catch (e) { alert('카테고리를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
   };
 
   const handleAddOptionRow = () => {
@@ -446,44 +446,28 @@ const AdminMain: React.FC = () => {
   };
 
   const handleOrderStatusChange = async (orderId: string, newStatus: string) => {
-    let refundSuccessful = false;
+    /* =========================================================================
+     * 💳 [교정] 결제 환불은 더 이상 이 화면에서 직접 호출하지 않습니다.
+     *
+     * 예전에는 목록 데이터에 결제 번호(paymentKey)가 들어 있지 않아
+     * 환불 조건문이 한 번도 참이 되지 못했고, 결과적으로 주문 상태만 바뀌고
+     * 실제 카드 환불은 나가지 않았습니다.
+     *
+     * 이제 상태 변경 요청 하나만 보내면 서버가 결제 원장을 직접 찾아
+     * 환불과 재고 복구까지 함께 처리합니다.
+     * ========================================================================= */
+    const isRefundStep = newStatus === '주문취소' || newStatus === '반품완료';
 
-    // 🌟 [신설] 주문 취소/반품 완료 승인 및 결제 환불 연동 로직
-    if (newStatus === '주문취소' || newStatus === '반품완료') {
-      const confirmMsg = newStatus === '주문취소' 
-        ? '주문을 최종 취소하시겠습니까? 카드 결제 건인 경우 토스 결제 취소가 함께 진행됩니다.'
-        : '반품 처리를 최종 완료하시겠습니까? 카드 결제 건인 경우 토스 결제 환불이 함께 진행됩니다.';
+    if (isRefundStep) {
+      const confirmMsg = newStatus === '주문취소'
+        ? '주문을 취소하시겠습니까?\n카드로 결제된 건이라면 결제 취소와 재고 복구가 함께 진행됩니다.'
+        : '반품 처리를 완료하시겠습니까?\n카드로 결제된 건이라면 환불과 재고 복구가 함께 진행됩니다.';
 
       if (!window.confirm(confirmMsg)) return;
-      
-      const targetOrder = orders.find(o => String(o.id || o.orderId) === String(orderId));
-      
-      // 토스 결제 키가 존재하는 경우 (카드/페이 결제 건)
-      if (targetOrder && targetOrder.paymentKey) {
-        try {
-          const refundRes = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/toss/cancel`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              paymentKey: targetOrder.paymentKey,
-              cancelReason: `관리자 승인 ${newStatus}`
-            })
-          });
-          const refundResult = await refundRes.json();
-          if (!refundRes.ok || !refundResult.success) {
-            alert(`결제 취소 실패: ${refundResult.message || '토스 API 에러'}`);
-            return; // 결제 취소 실패 시 주문 상태 변경 중단
-          }
-          refundSuccessful = true;
-        } catch (e) {
-          alert('결제 취소 통신 중 오류가 발생했습니다.');
-          return;
-        }
-      }
     }
 
     if (newStatus === '교환완료') {
-      if (!window.confirm('교환 처리를 최종 완료하시겠습니까? 새 물건의 운송장 번호를 미리 저장하셨는지 확인해 주십시오.')) return;
+      if (!window.confirm('교환 처리를 완료하시겠습니까?\n새로 보낸 상품의 운송장 번호를 먼저 저장했는지 확인해 주세요.')) return;
     }
 
     try {
@@ -492,18 +476,21 @@ const AdminMain: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
-      if (response.ok) {
-        if (refundSuccessful) {
-          alert(`[환불 완료] 토스페이먼츠 결제 취소 승인 및 주문 번호 [${orderId}]의 상태가 [${newStatus}]로 변경 완료되었습니다.`);
-        } else {
-          alert(`주문 번호 [${orderId}]의 상태가 [${newStatus}](으)로 변경 완료되었습니다.`);
-        }
-        await loadBackendData(); // 🌟 [수정] await 추가하여 상태 업데이트 확실히 대기
+
+      const result = await response.json().catch(() => null);
+
+      if (response.ok && result?.success !== false) {
+        alert(isRefundStep
+          ? `주문 상태를 [${newStatus}]로 변경했습니다. 결제 취소와 재고 복구가 함께 처리되었습니다.`
+          : `주문 상태를 [${newStatus}]로 변경했습니다.`);
+        await loadBackendData();
       } else {
-        alert('배송 상태 업데이트 실패');
+        // 환불에 실패하면 서버가 상태 변경 자체를 되돌리므로, 사유를 그대로 보여줍니다.
+        alert(result?.message || '주문 상태를 변경하지 못했습니다.');
       }
     } catch (err) {
-      alert('백엔드 상태 변경 API 서버가 꺼져있습니다.');
+      console.error('주문 상태 변경 실패', err);
+      alert('주문 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -524,13 +511,14 @@ const AdminMain: React.FC = () => {
         })
       });
       if (response.ok) {
-        alert(`주문 번호 [${orderId}]의 운송장 정보가 데이터베이스 원장에 안전하게 영속화되었습니다.`);
+        alert(`주문 번호 [${orderId}]의 운송장 정보를 저장했습니다.`);
         loadBackendData();
       } else {
-        alert('운송장 정보 저장 실패');
+        alert('운송장 정보를 저장하지 못했습니다.');
       }
     } catch (err) {
-      alert('백엔드 통신 실패 또는 API 서버 확인 요망');
+      console.error('운송장 저장 실패', err);
+      alert('운송장 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -545,13 +533,14 @@ const AdminMain: React.FC = () => {
         body: JSON.stringify({ role: targetRole })
       });
       if (response.ok) {
-        alert('회원 권한 정보가 성공적으로 변경되었습니다.');
+        alert('회원 권한을 변경했습니다.');
         loadBackendData();
       } else {
-        alert('권한 조정 처리 실패');
+        alert('회원 권한을 변경하지 못했습니다.');
       }
     } catch (err) {
-      alert('백엔드 회원 제어 API 서버가 꺼져있습니다.');
+      console.error('회원 권한 변경 실패', err);
+      alert('회원 권한을 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -563,27 +552,29 @@ const AdminMain: React.FC = () => {
       if (response.ok) {
         loadBackendData();
       } else {
-        alert('진열 상태 스위칭 실패');
+        alert('진열 상태를 변경하지 못했습니다.');
       }
     } catch (e) {
-      alert('백엔드 서버 연동 실패');
+      console.error('진열 상태 변경 실패', e);
+      alert('진열 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
   const handleProductDelete = async (id: number) => {
-    if (!window.confirm('정말 이 상품을 삭제하시겠습니까? 데이터는 안전하게 보관함 처리(Soft Delete) 됩니다.')) return;
+    if (!window.confirm('이 상품을 삭제하시겠습니까?\n판매 목록에서만 내려가며, 기존 주문 내역은 그대로 보존됩니다.')) return;
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`, {
         method: 'DELETE'
       });
       if (response.ok) {
-        alert('상품이 목록에서 성공적으로 안전 제거되었습니다.');
+        alert('상품을 삭제했습니다.');
         loadBackendData();
       } else {
-        alert('삭제 프로세스 처리 실패');
+        alert('상품을 삭제하지 못했습니다.');
       }
     } catch (e) {
-      alert('백엔드 서버 통신 실패');
+      console.error('상품 삭제 실패', e);
+      alert('상품을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -629,7 +620,7 @@ const AdminMain: React.FC = () => {
       setImageFiles([]); 
       setProductViewMode('create');
     } catch (err) {
-      alert('상품 상세 정보를 백엔드에서 가져오는데 실패했습니다.');
+      alert('상품 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -780,14 +771,15 @@ const AdminMain: React.FC = () => {
 
       const result = await response.json();
       if (response.ok && result.status !== 'ERROR') {
-        alert(editingProductId ? '백엔드 본체 및 DB 상품 정보 수정 갱신 완료!' : '스프링 부트 백엔드 본체 및 DB로 상품 등록 완료!');
+        alert(editingProductId ? '상품 정보를 수정했습니다.' : '상품을 등록했습니다.');
         resetRegisterForm();
         loadBackendData();
       } else {
-        alert(`처리 실패: ${result.message || '서ver 명세 에러'}`);
+        alert(result.message || '상품을 저장하지 못했습니다.');
       }
     } catch (err) {
-      alert('서버 에러가 포착되었습니다.');
+      console.error('상품 저장 실패', err);
+      alert('상품을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -1228,7 +1220,7 @@ const AdminMain: React.FC = () => {
         return (
           <section className="dashboard-detail-section">
             <div className="category-admin-board" style={{ background: '#141414', padding: '18px', borderRadius: '8px', marginBottom: '25px', border: '1px solid #262626' }}>
-              <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', letterSpacing: '0.03em', color: '#fff', textTransform: 'uppercase' }}>🔧 실시간 동적 카테고리 제어 보드 (드래그로 순서 변경)</h3>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', letterSpacing: '0.03em', color: '#fff', textTransform: 'uppercase' }}>🔧 카테고리 관리 (드래그로 순서 변경)</h3>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
                 <input type="text" placeholder="새 카테고리명 (예: 신발, 모자)" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} style={{ background: '#222', border: '1px solid #333', color: '#fff', padding: '8px 12px', borderRadius: '4px', width: '220px' }} />
                 
@@ -1243,7 +1235,7 @@ const AdminMain: React.FC = () => {
                   ))}
                 </select>
 
-                <button type="button" onClick={handleCreateCategory} style={{ background: '#fff', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '4px', fontWeight: '600', cursor: 'pointer' }}>+ 실시간 개통</button>
+                <button type="button" onClick={handleCreateCategory} style={{ background: '#fff', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '4px', fontWeight: '600', cursor: 'pointer' }}>+ 카테고리 추가</button>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {categories.map((cat: any, idx: number) => (
@@ -1684,7 +1676,7 @@ const AdminMain: React.FC = () => {
                                   {(!order.items || order.items.length === 0) && (
                                     <tr>
                                       <td colSpan={4} style={{ textAlign: 'center', padding: '12px', color: '#555' }}>
-                                        수집된 주문 상세 상품 내역 패킷이 존재하지 않습니다.
+                                        주문 상품 내역이 없습니다.
                                       </td>
                                     </tr>
                                   )}
@@ -2057,7 +2049,7 @@ const AdminMain: React.FC = () => {
             <h1 style={{ textTransform: 'uppercase', letterSpacing: '0.03em' }}>
               {activeTab === 'dashboard' ? 'Dashboard Overview' : `${activeTab} Management`}
             </h1>
-            <p className="subtitle">라 린느 옴므 브랜드 system 제어 콘솔입니다.</p>
+            <p className="subtitle">라 린느 옴므 브랜드 관리자 페이지입니다.</p>
           </div>
           <div className="admin-profile"><span>최고 관리자 마스터</span></div>
         </header>
