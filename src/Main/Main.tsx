@@ -425,7 +425,7 @@ const Main: React.FC = () => {
               </h2>
 
               <div className="faq-list fade-in fade-in-delay-2">
-                <details>
+                <details open>
                   <summary>배송은 얼마나 걸리나요?</summary>
                   <p>
                     배송방법: 택배 / 배송지역: 전국 / 배송비: 무료
@@ -436,7 +436,7 @@ const Main: React.FC = () => {
                     주문 후 발송 완료 문자를 통해 배송 현황을 확인하실 수 있습니다.
                   </p>
                 </details>
-                <details>
+                <details open>
                   <summary>교환 및 반품이 가능한가요?</summary>
                   <p>
                     수령하신 날을 포함하여 7일 이내에 요청해 주셔야 교환 및 반품이 가능합니다.
