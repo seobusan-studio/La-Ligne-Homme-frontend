@@ -1,3 +1,4 @@
+import { apiFetch } from '../../lib/api';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './SpeedDial.css';
@@ -33,7 +34,7 @@ const SpeedDial: React.FC = () => {
         if (session && session.id) {
           // 1. [로그인 회원] 백엔드 DB에서 최신 목록 인양
           try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/recent?userId=${session.id}`);
+            const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/products/recent?userId=${session.id}`);
             const result = await res.json();
             if (result.success && Array.isArray(result.data)) {
               setRecentItems(result.data);

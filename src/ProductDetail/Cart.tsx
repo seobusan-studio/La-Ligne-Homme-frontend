@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Cart.css';
@@ -26,7 +27,7 @@ const Cart: React.FC = () => {
       // 🌟 [로그인 유저] 백엔드 장바구니 DB API 조회
       if (session && session.id) {
         try {
-          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/carts`, {
+          const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/carts`, {
             headers: { 'X-User-Id': String(session.id) }
           });
           const result = await res.json();
@@ -98,7 +99,7 @@ const Cart: React.FC = () => {
 
     if (session && session.id && item.cartItemId) {
       try {
-        await fetch(`${import.meta.env.VITE_API_URL}/api/carts/${item.cartItemId}`, {
+        await apiFetch(`${import.meta.env.VITE_API_URL}/api/carts/${item.cartItemId}`, {
           method: 'PATCH',
           headers: { 
             'Content-Type': 'application/json',
@@ -128,7 +129,7 @@ const Cart: React.FC = () => {
 
     if (session && session.id && item.cartItemId) {
       try {
-        await fetch(`${import.meta.env.VITE_API_URL}/api/carts?ids=${item.cartItemId}`, {
+        await apiFetch(`${import.meta.env.VITE_API_URL}/api/carts?ids=${item.cartItemId}`, {
           method: 'DELETE',
           headers: { 'X-User-Id': String(session.id) }
         });

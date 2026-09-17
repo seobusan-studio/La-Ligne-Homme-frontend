@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api';
 // src/ProductDetail/Checkout.tsx
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -237,7 +238,6 @@ const Checkout: React.FC = () => {
     const session = sessionRaw ? JSON.parse(sessionRaw) : null;
 
     const orderRequestDto = {
-      userId: session ? (session.id || session.userId || session.userSeq || session.memberId || session.userNo || session.memberNo || session.seq || null) : null,
       nonMemberPw: isLoggedIn ? null : nonMemberPw, 
       receiverName: receiverName,
       receiverPhone: receiverPhone,
@@ -296,27 +296,27 @@ const Checkout: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders?paymentMethod=${encodeURIComponent(paymentMethod)}&email=${encodeURIComponent(session?.email || '')}`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/orders?paymentMethod=${encodeURIComponent(paymentMethod)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderRequestDto)
       });
 
       const result = await response.json();
-      if (response.ok && result.status !== 'ERROR') {
+      if (response.ok && result.success && result.data?.orderNumber) {
         
         /* =========================================================================
          * 🌟 [정밀 교정 개통 구역] 결제 수단 분류형 알림창 피드백 분기 가드선
          * ========================================================================= */
         if (paymentMethod === '무통장입금') {
-          alert('📋 무통장 주문 접수가 완료되었습니다. 가상계좌로 입금해 주세요.');
+          alert('📋 무통장 주문 접수가 완료되었습니다. 안내된 계좌로 입금해 주세요.');
         } else {
           alert('🎉 주문 승인 및 카드 결제가 성공적으로 처리 완료되었습니다.');
         }
 
         const successData = {
           orderNumber: result.data.orderNumber, 
-          totalAmount: totalAmount,
+          totalAmount: result.data.amount,
           paymentMethod: paymentMethod,
           bankInfo: paymentMethod === '무통장입금' ? {
             bankName: '국민은행',
@@ -336,7 +336,7 @@ const Checkout: React.FC = () => {
             
           if (cartItemIds.length > 0) {
             try {
-              fetch(`${import.meta.env.VITE_API_URL}/api/carts?ids=${cartItemIds.join(',')}`, {
+              await apiFetch(`${import.meta.env.VITE_API_URL}/api/carts?ids=${cartItemIds.join(',')}`, {
                 method: 'DELETE',
                 headers: { 'X-User-Id': String(session.id) }
               });

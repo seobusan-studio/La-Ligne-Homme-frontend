@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api';
 // src/Signup/Signup.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -158,7 +159,7 @@ const Signup: React.FC = () => {
 
     try {
       setEmailMessage('');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/check-email`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/auth/check-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() })
@@ -207,7 +208,7 @@ const Signup: React.FC = () => {
     try {
       setSmsError('');
       // 백엔드 실시간 SMS 사출 API 타격
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/sms/send`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/auth/sms/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: rawPhone }) // 깨끗한 숫자만 송출
@@ -241,7 +242,7 @@ const Signup: React.FC = () => {
 
     try {
       setSmsError('');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/sms/verify`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/auth/sms/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -376,7 +377,7 @@ const Signup: React.FC = () => {
         isAgreedMarketing: agreeMarketing  
       };
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/signup`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

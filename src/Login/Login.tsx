@@ -1,3 +1,5 @@
+import { apiFetch } from '../lib/api';
+import { saveSession } from '../lib/api';
 // src/Login/Login.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -56,7 +58,7 @@ const Login: React.FC = () => {
 
     try {
       // 진짜 스프링부트 백엔드로 요청
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password })
@@ -71,19 +73,20 @@ const Login: React.FC = () => {
         result = { message: text };
       }
 
-      if (response.ok && (result.success || result.data)) {
+      if (response.ok && result.success && result.data?.accessToken) {
         const SESSION_KEY = 'laligne_session';
         const userData = result.data;
-        const sessionData = JSON.stringify({ 
+        const sessionData = {
           id: userData.id,
           email: userData.email, 
           name: userData.name,
           role: userData.role,
           phone: userData.phone,
-          address: userData.address
-        });
-        if (rememberMe) localStorage.setItem(SESSION_KEY, sessionData);
-        else sessionStorage.setItem(SESSION_KEY, sessionData);
+          address: userData.address,
+          accessToken: userData.accessToken,
+          expiresAt: userData.expiresAt
+        };
+        saveSession(sessionData, rememberMe);
         navigate('/');
       } else {
         console.error('Login failed:', response.status, result);

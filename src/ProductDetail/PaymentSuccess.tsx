@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import './Checkout.css'; // 기존 스타일 재활용
@@ -7,7 +8,7 @@ import './Checkout.css'; // 기존 스타일 재활용
  *
  * 🚨 [교정] 예전에는 이 화면에서 "결제 승인"과 "주문 저장"을 각각 따로 요청했습니다.
  *    그래서 승인은 됐는데 주문 저장이 실패하면 결제 기록만 남고 주문은 사라졌습니다.
- *    이제는 서버에 한 번만 요청하고, 서버가 두 작업을 한 묶음으로 처리합니다.
+ *    서버에 승인과 주문 저장을 요청합니다. 통신 오류 시 자동 재결제를 하지 않습니다.
  */
 const PaymentSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -50,8 +51,8 @@ const PaymentSuccess: React.FC = () => {
 
       try {
         // 결제 승인 + 주문 저장을 서버가 한 번에 처리합니다.
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/payments/toss/confirm?email=${encodeURIComponent(session?.email || '')}`,
+        const response = await apiFetch(
+          `${import.meta.env.VITE_API_URL}/api/payments/toss/confirm`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -103,7 +104,7 @@ const PaymentSuccess: React.FC = () => {
           .filter((id: any) => id != null);
 
         if (cartItemIds.length > 0) {
-          await fetch(`${import.meta.env.VITE_API_URL}/api/carts?ids=${cartItemIds.join(',')}`, {
+          await apiFetch(`${import.meta.env.VITE_API_URL}/api/carts?ids=${cartItemIds.join(',')}`, {
             method: 'DELETE',
             headers: { 'X-User-Id': String(session.id) }
           });

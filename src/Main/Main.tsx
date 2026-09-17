@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Main.css';
@@ -41,7 +42,7 @@ const Main: React.FC = () => {
 
   const loadData = () => {
     const fetchBanners = (type: string, setter: any) => {
-      fetch(`${import.meta.env.VITE_API_URL}/api/banners/${type.toLowerCase()}`)
+      apiFetch(`${import.meta.env.VITE_API_URL}/api/banners/${type.toLowerCase()}`)
         .then(res => res.json())
         .then(result => {
           if (result.success) {
@@ -54,7 +55,7 @@ const Main: React.FC = () => {
     fetchBanners('HERO', setHeroBanners);
     fetchBanners('EDITORIAL', setEditorialBanners);
 
-    fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
+    apiFetch(`${import.meta.env.VITE_API_URL}/api/categories`)
       .then(res => res.json())
       .then(result => {
         if (result.data) {
@@ -63,7 +64,7 @@ const Main: React.FC = () => {
       })
       .catch(err => console.error('동적 카테고리 통신 대기 중...', err));
 
-    fetch(`${import.meta.env.VITE_API_URL}/api/products`)
+    apiFetch(`${import.meta.env.VITE_API_URL}/api/products`)
       .then(res => res.json())
       .then(result => {
         if (result.data) {

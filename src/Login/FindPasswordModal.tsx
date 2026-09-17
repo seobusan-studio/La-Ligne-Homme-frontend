@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api';
 // src/Login/FindPasswordModal.tsx
 import React, { useState } from 'react';
 import './FindPasswordModal.css'; // 🌟 [수혈] 분리된 전용 CSS 파일 정밀 결합
@@ -48,7 +49,7 @@ export const FindPasswordModal: React.FC<FindPasswordModalProps> = ({ isOpen, on
        * 💡 [스프링부트 백엔드 오피셜 파이프라인 연격 격발]
        * UserController의 POST /api/auth/find-password 라인을 정밀 타격합니다.
        * ========================================================================= */
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/find-password`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/auth/find-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

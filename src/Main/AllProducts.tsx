@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './AllProducts.css';
@@ -41,14 +42,14 @@ const AllProducts: React.FC = () => {
 
   useEffect(() => {
     // 카테고리 로드
-    fetch(`${import.meta.env.VITE_API_URL}/api/categories`)
+    apiFetch(`${import.meta.env.VITE_API_URL}/api/categories`)
       .then(res => res.json())
       .then(result => {
         if (result.data) setCategories(result.data);
       });
 
     // 전체 상품 로드
-    fetch(`${import.meta.env.VITE_API_URL}/api/products`)
+    apiFetch(`${import.meta.env.VITE_API_URL}/api/products`)
       .then(res => res.json())
       .then(result => {
         if (result.data) {
