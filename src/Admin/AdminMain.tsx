@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api';
 // src/ProductDetail/AdminMain.tsx
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -121,7 +122,7 @@ const AdminMain: React.FC = () => {
     // 🌟 [보정] 배너 섹션별 멀티 인양
     const fetchBanners = async (type: string, setter: any) => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/banners/${type}`);
+        const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/banners/${type}`);
         const result = await res.json();
         if (result.success) {
           setter(Array.isArray(result.data) ? result.data : (result.data ? [result.data] : []));
@@ -133,7 +134,7 @@ const AdminMain: React.FC = () => {
     fetchBanners('EDITORIAL', setEditorialBanners);
 
     try {
-      const resCat = await fetch(`${import.meta.env.VITE_API_URL}/api/categories`);
+      const resCat = await apiFetch(`${import.meta.env.VITE_API_URL}/api/categories`);
       const resultCat = await resCat.json();
       if (resultCat.data) {
         const sortedCats = [...resultCat.data].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
@@ -151,7 +152,7 @@ const AdminMain: React.FC = () => {
     } catch (e) { console.log('동적 카테고리 원장 통신 대기 중...');}
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/dashboard/stats`);
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/admin/dashboard/stats`);
       
       // 🌟 [강력한 가드] 상태 코드가 403(권한없음)인 경우를 별도로 잡아냅니다.
       if (response.status === 403) {
@@ -176,7 +177,7 @@ const AdminMain: React.FC = () => {
     }
 
     try {
-      const resProd = await fetch(`${import.meta.env.VITE_API_URL}/api/products`);
+      const resProd = await apiFetch(`${import.meta.env.VITE_API_URL}/api/products`);
       const resultProd = await resProd.json();
       if (resultProd.data) {
         setProducts(resultProd.data);
@@ -186,7 +187,7 @@ const AdminMain: React.FC = () => {
     } catch (e) { console.log('상품 데이터 통신 대기 중...'); }
 
     try {
-      const resOrders = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/list`);
+      const resOrders = await apiFetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/list`);
       const resultOrders = await resOrders.json();
       
       if (resultOrders && resultOrders.data) {
@@ -225,14 +226,14 @@ const AdminMain: React.FC = () => {
     } catch (e) { console.log('주문 API 통신 대기 중...'); }
 
     try {
-      const resUsers = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users`);
+      const resUsers = await apiFetch(`${import.meta.env.VITE_API_URL}/api/admin/users`);
       const resultUsers = await resUsers.json();
       if (resultUsers.data) setUsers(resultUsers.data);
       else if (Array.isArray(resultUsers)) setUsers(resultUsers);
     } catch (e) { console.log('회원 API 통신 대기 중...'); }
 
     try {
-      const resSubs = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/subscribers`);
+      const resSubs = await apiFetch(`${import.meta.env.VITE_API_URL}/api/admin/subscribers`);
       const resultSubs = await resSubs.json();
       if (resultSubs.data) setSubscribers(resultSubs.data);
       else if (Array.isArray(resultSubs)) setSubscribers(resultSubs);
@@ -262,7 +263,7 @@ const AdminMain: React.FC = () => {
       for (const file of validImages) {
         const formData = new FormData();
         formData.append('image', file);
-        await fetch(`${import.meta.env.VITE_API_URL}/api/banners/${type.toLowerCase()}`, { method: 'POST', body: formData });
+        await apiFetch(`${import.meta.env.VITE_API_URL}/api/banners/${type.toLowerCase()}`, { method: 'POST', body: formData });
       }
       alert(`사진 ${validImages.length}장을 등록했습니다.`);
       loadBackendData();
@@ -272,7 +273,7 @@ const AdminMain: React.FC = () => {
   const handleDeleteBanner = async (type: string, id: number) => {
     if (!window.confirm('선택하신 배너 이미지를 삭제하시겠습니까?')) return;
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/banners/${type.toLowerCase()}/${id}`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/banners/${type.toLowerCase()}/${id}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -304,7 +305,7 @@ const AdminMain: React.FC = () => {
         sortOrder: idx + 1
       }));
       
-      fetch(`${import.meta.env.VITE_API_URL}/api/banners/${type.toLowerCase()}/orders`, {
+      apiFetch(`${import.meta.env.VITE_API_URL}/api/banners/${type.toLowerCase()}/orders`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(finalOrder)
@@ -325,7 +326,7 @@ const AdminMain: React.FC = () => {
   const updateCategoryOrders = async (updatedCategories: any[]) => {
     try {
       const updatePromises = updatedCategories.map((cat, index) => {
-        return fetch(`${import.meta.env.VITE_API_URL}/api/categories/${cat.id}`, {
+        return apiFetch(`${import.meta.env.VITE_API_URL}/api/categories/${cat.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: cat.name, sortOrder: index + 1 })
@@ -376,7 +377,7 @@ const AdminMain: React.FC = () => {
       : 1;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/categories`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/categories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -415,7 +416,7 @@ const AdminMain: React.FC = () => {
 
     if (!window.confirm(`[${name}] 카테고리를 삭제하시겠습니까?`)) return;
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/categories/${id}`, { method: 'DELETE' });
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/categories/${id}`, { method: 'DELETE' });
       if (response.ok) {
         alert('카테고리를 삭제했습니다.');
         
@@ -471,7 +472,7 @@ const AdminMain: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${orderId}/status`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -501,7 +502,7 @@ const AdminMain: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${orderId}/status`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -527,7 +528,7 @@ const AdminMain: React.FC = () => {
     if (!window.confirm(`[${email}] 계정 권한을 ${targetRole}(으)로 변경하시겠습니까?`)) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${email}/role`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${email}/role`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: targetRole })
@@ -546,7 +547,7 @@ const AdminMain: React.FC = () => {
 
   const handleProductToggle = async (id: number) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}/toggle`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/products/${id}/toggle`, {
         method: 'PATCH'
       });
       if (response.ok) {
@@ -563,7 +564,7 @@ const AdminMain: React.FC = () => {
   const handleProductDelete = async (id: number) => {
     if (!window.confirm('이 상품을 삭제하시겠습니까?\n판매 목록에서만 내려가며, 기존 주문 내역은 그대로 보존됩니다.')) return;
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -580,7 +581,7 @@ const AdminMain: React.FC = () => {
 
   const handleProductEditStart = async (prod: any) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${prod.id}`);
+      const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/products/${prod.id}`);
       const result = await res.json();
       const fullProd = result.data || prod; 
 
@@ -763,7 +764,7 @@ const AdminMain: React.FC = () => {
         ? `${import.meta.env.VITE_API_URL}/api/products/${editingProductId}`
         : `${import.meta.env.VITE_API_URL}/api/products`;
         
-      const response = await fetch(apiUrl, {
+      const response = await apiFetch(apiUrl, {
         method: editingProductId ? 'PUT' : 'POST',
         headers: editingProductId ? {} : { 'X-Admin-Id': '1' },
         body: formData

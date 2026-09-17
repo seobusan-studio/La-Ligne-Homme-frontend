@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './GuestOrderLookup.css';
@@ -30,7 +31,7 @@ const GuestOrderLookup: React.FC = () => {
     setOrderData(null);
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${import.meta.env.VITE_API_URL}/api/orders/non-member?orderNumber=${encodeURIComponent(orderNumber)}&password=${encodeURIComponent(password)}`
       );
       const result = await response.json();

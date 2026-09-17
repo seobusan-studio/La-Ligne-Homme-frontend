@@ -1,3 +1,5 @@
+import { apiFetch } from '../lib/api';
+import { clearSession } from '../lib/api';
 // src/ProductDetail/MyPage.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -46,7 +48,7 @@ const MyPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${claimOrderId}/claim`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/orders/${claimOrderId}/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ claimType, reason: claimReason })
@@ -87,12 +89,14 @@ const MyPage: React.FC = () => {
     /* =========================================================================
      * 🚨 [기존 백엔드 연동 원본 사수] 실시간 주문 데이터 필터링 라인
      * ========================================================================= */
-    fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/list`)
-      .then(res => res.json())
+    apiFetch(`${import.meta.env.VITE_API_URL}/api/orders/me`)
+      .then(res => {
+        if (res.status === 401) { navigate('/login'); throw new Error('Login required'); }
+        if (!res.ok) throw new Error('주문 내역을 불러오지 못했습니다.');
+        return res.json();
+      })
       .then(result => {
-        const myData = (result.data || result || []).filter(
-          (o: any) => o.customer === session.name || o.customerName === session.name
-        );
+        const myData = result.data || [];
         setOrderList(myData);
         setLoading(false);
       })
@@ -140,7 +144,7 @@ const MyPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/password`, {
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/users/password`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -153,13 +157,13 @@ const MyPage: React.FC = () => {
       const result = await response.json();
 
       if (response.ok && (result.status === 'SUCCESS' || result.success)) {
-        setPwSuccess('비밀번호가 안전하게 변경되었습니다. 다음 로그인부터 적용됩니다.');
+        clearSession();
+        setPwSuccess('비밀번호가 변경되었습니다. 새 비밀번호로 다시 로그인해 주세요.');
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
         setTimeout(() => {
-          setIsPwFormOpen(false);
-          setPwSuccess('');
+          navigate('/login', { replace: true });
         }, 3000);
       } else {
         setPwError(result.message || '현재 비밀번호가 일치하지 않습니다.');
@@ -175,8 +179,8 @@ const MyPage: React.FC = () => {
     if (!window.confirm('주문을 취소하시겠습니까? (관리자 확인 후 최종 결제 취소가 진행됩니다)')) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${orderId}/status`, {
-        method: 'PATCH',
+      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/cancel-request`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: '취소요청' })
       });
@@ -346,7 +350,7 @@ const MyPage: React.FC = () => {
                         </span>
 
                         {/* 🌟 [신설] 주문 취소 요청 버튼: 송장 번호가 없고, 아직 취소 상태가 아닐 때만 노출 */}
-                        {!order.trackingNumber && order.status !== '주문취소' && order.status !== '취소요청' && (
+        {!order.trackingNumber && ['주문접수', '결제완료', '배송준비중'].includes(order.status) && (
                           <button 
                             type="button"
                             onClick={() => handleCancelRequest(order.id || order.orderId)}

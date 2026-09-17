@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './ProductDetail.css';
@@ -45,7 +46,7 @@ const ProductDetail: React.FC = () => {
 
     const fetchLatestStockFromDb = async (isInitial: boolean = false) => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`);
+        const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/products/${id}`);
         const result = await res.json();
         
         if (result.data && isMounted) {
@@ -73,7 +74,7 @@ const ProductDetail: React.FC = () => {
 
             if (session && session.id) {
               // 1. [로그인 회원] 백엔드 DB에 실시간 기록 적재
-              fetch(`${import.meta.env.VITE_API_URL}/api/products/recent`, {
+              apiFetch(`${import.meta.env.VITE_API_URL}/api/products/recent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: session.id, productId: loadedProduct.id })
@@ -199,7 +200,7 @@ const ProductDetail: React.FC = () => {
     // 🌟 로그인 회원일 경우 백엔드 DB 장바구니로 연동
     if (session && session.id) {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/carts`, {
+        const res = await apiFetch(`${import.meta.env.VITE_API_URL}/api/carts`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
