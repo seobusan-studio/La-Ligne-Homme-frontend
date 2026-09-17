@@ -26,14 +26,7 @@ const ANONYMOUS_CUSTOMER_KEY = 'ANONYMOUS';
  * 이 번호는 결제창에 그대로 넘어가고, 서버에서도 같은 번호로 주문이 저장됩니다.
  * (토스 규격: 영문·숫자·하이픈·언더스코어 6~64자)
  */
-const createOrderNumber = (): string => {
-  const random =
-    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID().replace(/-/g, '').slice(0, 16).toUpperCase()
-      : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`.toUpperCase();
 
-  return `LLH-${random}`;
-};
 
 const Checkout: React.FC = () => {
   const location = useLocation();
@@ -215,7 +208,17 @@ const Checkout: React.FC = () => {
     }
   };
 
+  const submissionLock = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
   const handleFinalPaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submissionLock.current) return;
+    submissionLock.current = true; setSubmitting(true);
+    try { await submitOrder(e); }
+    finally { submissionLock.current = false; setSubmitting(false); }
+  };
+
+  const submitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // 선택한 배송지 방식에 맞추어 최종 전송할 단일 주소 텍스트를 실시간 병합 산출
@@ -228,8 +231,8 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    if (!isLoggedIn && !nonMemberPw) {
-      alert('나중에 주문 내역을 조회하려면 비회원 주문 비밀번호가 필요합니다.');
+    if (!isLoggedIn && (nonMemberPw.length < 8 || new TextEncoder().encode(nonMemberPw).length > 72)) {
+      alert('비회원 주문 비밀번호는 8자 이상, UTF-8 기준 72바이트 이하여야 합니다.');
       return;
     }
 
@@ -237,6 +240,10 @@ const Checkout: React.FC = () => {
     const sessionRaw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
     const session = sessionRaw ? JSON.parse(sessionRaw) : null;
 
+    if (selectedItems.some((item: any) => !item.optionId || item.quantity < 1 || item.quantity > 100)) {
+      alert('상품 옵션과 수량을 다시 선택해 주세요.');
+      return;
+    }
     const orderRequestDto = {
       nonMemberPw: isLoggedIn ? null : nonMemberPw, 
       receiverName: receiverName,
@@ -245,7 +252,7 @@ const Checkout: React.FC = () => {
       deliveryMemo: deliveryMemo,
       paymentMethod: paymentMethod === 'ONLINE_PAYMENT' ? 'CARD' : paymentMethod,
       items: selectedItems.map((item: any) => ({
-        optionId: item.optionId || 1,
+        optionId: item.optionId,
         quantity: item.quantity,
         orderPrice: item.price
       }))
@@ -264,7 +271,16 @@ const Checkout: React.FC = () => {
         return;
       }
 
-      const orderNumber = createOrderNumber();
+      let orderNumber = '';
+      try {
+        const preparedResponse = await apiFetch(`${import.meta.env.VITE_API_URL}/api/payments/toss/prepare`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderRequestDto)
+        });
+        const prepared = await preparedResponse.json();
+        if (!preparedResponse.ok || !prepared.success) throw new Error(prepared.message || '주문 준비 실패');
+        if (Number(prepared.data.amount) !== paymentAmount) throw new Error('상품 가격이 변경되었습니다. 새로고침 후 다시 주문해 주세요.');
+        orderNumber = prepared.data.orderNumber;
+      } catch (error: any) { alert(error.message || '주문을 준비하지 못했습니다.'); return; }
       const orderName = selectedItems.length > 1
         ? `${selectedItems[0].name} 외 ${selectedItems.length - 1}건`
         : selectedItems[0].name;
@@ -562,7 +578,7 @@ const Checkout: React.FC = () => {
                   borderRadius: '0' 
                 }}
               >
-                <option value="무통장입금">무통장입금 (가상계좌 발송)</option>
+                <option value="무통장입금">무통장입금 (입금 계좌 안내)</option>
                 {/* 결제창 키(VITE_TOSS_CLIENT_KEY)가 설정된 환경에서만 온라인 결제를 노출합니다.
                     키가 없으면 결제창을 띄울 수 없으므로 선택지 자체를 감춥니다. */}
                 {IS_ONLINE_PAYMENT_ENABLED && (
@@ -613,7 +629,7 @@ const Checkout: React.FC = () => {
               <span>₩{(totalAmount + deliveryFee).toLocaleString()}</span>
             </div>
 
-            <button type="button" onClick={handleFinalPaymentSubmit} className="btn-payment-execute">
+            <button type="button" onClick={handleFinalPaymentSubmit} disabled={submitting} className="btn-payment-execute">
               CONFIRM &amp; PAY (최종 결제 승인하기)
             </button>
           </div>

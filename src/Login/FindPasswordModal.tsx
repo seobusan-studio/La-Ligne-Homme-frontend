@@ -1,146 +1,52 @@
 import { apiFetch } from '../lib/api';
-// src/Login/FindPasswordModal.tsx
 import React, { useState } from 'react';
-import './FindPasswordModal.css'; // 🌟 [수혈] 분리된 전용 CSS 파일 정밀 결합
-
-interface FindPasswordModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export const FindPasswordModal: React.FC<FindPasswordModalProps> = ({ isOpen, onClose }) => {
-  const [email, setEmail] = useState<string>('');
-  const [phone, setPhone] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [errorMsg, setErrorMsg] = useState<string>('');
-
-  // 모달이 닫혀있는 상태면 화면 렌더링 인터셉트 탈출
+import './FindPasswordModal.css';
+interface Props { isOpen: boolean; onClose: () => void; }
+export const FindPasswordModal: React.FC<Props> = ({ isOpen, onClose }) => {
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [sent, setSent] = useState(false);
+  const [proofToken, setProofToken] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   if (!isOpen) return null;
-
-  // 전화번호 입력 시 숫자만 남기고 자동 하이픈 포맷팅 가드선
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/\D/g, '').slice(0, 11);
-    let formatted = raw;
-    if (raw.length >= 4 && raw.length < 8) formatted = `${raw.slice(0, 3)}-${raw.slice(3)}`;
-    else if (raw.length >= 8) formatted = `${raw.slice(0, 3)}-${raw.slice(3, 7)}-${raw.slice(7)}`;
-    setPhone(formatted);
-    setErrorMsg('');
+  const post = async (path: string, body: object) => {
+    const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/auth/${path}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.message || '요청을 처리하지 못했습니다.');
+    return result.data;
   };
-
-  const handleFindPasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-
-    const isEmailValid = email && email.includes('@');
-    const rawPhone = phone.replace(/\D/g, '');
-
-    if (!isEmailValid) {
-      setErrorMsg('올바른 이메일 주소 형식을 입력해 주세요.');
-      return;
-    }
-    if (rawPhone.length < 10) {
-      setErrorMsg('올바른 휴대폰 번호를 입력해 주세요.');
-      return;
-    }
-
-    setIsLoading(true);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault(); setError(''); setLoading(true);
+    const identity = { email: email.trim(), phone: phone.replace(/\D/g, '') };
     try {
-      /* =========================================================================
-       * 💡 [스프링부트 백엔드 오피셜 파이프라인 연격 격발]
-       * UserController의 POST /api/auth/find-password 라인을 정밀 타격합니다.
-       * ========================================================================= */
-      const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/auth/find-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email.trim(),
-          phone: rawPhone // 하이픈을 제거한 순수 숫자 원장 사출
-        })
-      });
-
-      const result = await response.json();
-
-      if (response.ok && (result.status === 'SUCCESS' || result.success)) {
-        alert('임시 비밀번호를 카카오 알림톡으로 발송했습니다.\n확인 후 로그인해 주세요.');
-        setEmail('');
-        setPhone('');
-        onClose(); // 성공 시 모달창 폐쇄
-      } else {
-        setErrorMsg(result.message || '회원 정보가 일치하지 않거나 오류가 발생했습니다.');
+      if (!sent) { await post('find-password', identity); setSent(true); }
+      else {
+        if (new TextEncoder().encode(password).length > 72) throw new Error('비밀번호는 UTF-8 기준 72바이트 이하여야 합니다.');
+        const token = proofToken || (await post('sms/verify', { ...identity, code, purpose: 'RESET' })).verificationToken;
+        setProofToken(token);
+        await post('reset-password', { ...identity, verificationToken: token, newPassword: password });
+        alert('비밀번호를 변경했습니다. 새 비밀번호로 로그인해 주세요.');
+        setProofToken(''); setSent(false); setCode(''); setPassword(''); onClose();
       }
-    } catch (err) {
-      setErrorMsg('임시 비밀번호를 발급하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (e) { setError(e instanceof Error ? e.message : '잠시 후 다시 시도해 주세요.'); }
+    finally { setLoading(false); }
   };
-
-  return (
-    <div className="modal-overlay-box">
-      <div className="modal-content-panel">
-        
-        <div className="modal-header-zone">
-          <p className="modal-eyebrow">Find Password</p>
-          <h2 className="modal-title">비밀번호 찾기</h2>
-          <p className="modal-desc">
-            가입하실 때 사용한 이메일과 휴대폰 번호를 입력하시면 임시 비밀번호를 알림톡으로 보내 드립니다.
-          </p>
-        </div>
-
-        <form onSubmit={handleFindPasswordSubmit} noValidate className="modal-form">
-          
-          {/* 이메일 입력 */}
-          <div className="modal-field">
-            <label>이메일 계정 *</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => { setEmail(e.target.value); setErrorMsg(''); }}
-              placeholder="example@laligne.com"
-              disabled={isLoading}
-            />
-          </div>
-
-          {/* 휴대폰 번호 입력 */}
-          <div className="modal-field">
-            <label>휴대폰 번호 *</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={handlePhoneChange}
-              placeholder="010-0000-0000"
-              disabled={isLoading}
-            />
-          </div>
-
-          {/* 에러 피드백 벨브 */}
-          {errorMsg && (
-            <span className="modal-error-msg">
-              ⚠️ {errorMsg}
-            </span>
-          )}
-
-          {/* 제어 버튼 */}
-          <div className="modal-btn-row">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isLoading}
-              className="modal-btn-cancel"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="modal-btn-submit"
-            >
-              {isLoading ? '전송 처리 중...' : '임시 비밀번호 발급'}
-            </button>
-          </div>
-          
-        </form>
-      </div>
-    </div>
-  );
+  return <div className="modal-overlay-box"><div className="modal-content-panel" role="dialog" aria-modal="true" aria-labelledby="reset-title">
+    <div className="modal-header-zone"><h2 id="reset-title" className="modal-title">비밀번호 재설정</h2>
+    <p className="modal-desc">{sent ? '알림톡의 6자리 임시 비밀번호를 아래에 입력하고 새 비밀번호를 설정해 주세요. 확인 전까지 기존 비밀번호는 유지됩니다.' : '가입한 이메일과 휴대폰 번호로 본인 확인 후 새 비밀번호를 설정합니다.'}</p></div>
+    <form onSubmit={submit} className="modal-form">
+      <div className="modal-field"><label htmlFor="reset-email">이메일</label><input id="reset-email" type="email" required value={email} disabled={loading || sent} onChange={e => setEmail(e.target.value)} /></div>
+      <div className="modal-field"><label htmlFor="reset-phone">휴대폰 번호</label><input id="reset-phone" type="tel" required value={phone} disabled={loading || sent} onChange={e => setPhone(e.target.value)} /></div>
+      {sent && <><div className="modal-field"><label htmlFor="reset-code">전송받은 임시 비밀번호 (3분 이내)</label><input id="reset-code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" required maxLength={6} value={code} onChange={e => setCode(e.target.value)} /></div>
+      <div className="modal-field"><label htmlFor="reset-password">새 비밀번호 (8자 이상)</label><input id="reset-password" type="password" autoComplete="new-password" required minLength={8} maxLength={72} value={password} onChange={e => setPassword(e.target.value)} /></div></>}
+      {sent && <button type="button" disabled={loading} onClick={() => {setSent(false);setProofToken('');setCode('');setError('');}}>인증 다시 시작</button>}
+      {error && <p className="modal-error-msg" role="alert">{error}</p>}
+      <div className="modal-btn-row"><button type="button" className="modal-btn-cancel" disabled={loading} onClick={() => {setProofToken('');setSent(false);setCode('');setPassword('');onClose();}}>취소</button>
+      <button className="modal-btn-submit" disabled={loading}>{loading ? '처리 중…' : sent ? '비밀번호 변경' : '인증용 임시 비밀번호 받기'}</button></div>
+    </form></div></div>;
 };

@@ -14,6 +14,7 @@ const PaymentSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   // 개발 모드의 이중 실행이나 새로고침으로 승인 요청이 두 번 나가지 않도록 막습니다.
@@ -73,6 +74,12 @@ const PaymentSuccess: React.FC = () => {
           return;
         }
 
+        if (result.data?.status !== 'PAID') {
+          setPending(result.data?.status === 'PENDING');
+          setErrorMessage(result.data?.message || '결제 결과를 확인 중입니다. 다시 결제하지 말고 주문 내역을 확인해 주세요.');
+          setLoading(false);
+          return;
+        }
         await clearPurchasedCartItems(session, selectedItems);
         sessionStorage.removeItem(pendingKey);
 
@@ -87,6 +94,7 @@ const PaymentSuccess: React.FC = () => {
         });
       } catch (err) {
         console.error('결제 승인 요청 실패', err);
+        setPending(true);
         setErrorMessage('결제 결과를 확인하지 못했습니다. 주문 내역에서 결제 상태를 확인해 주세요.');
         setLoading(false);
       }
@@ -136,7 +144,7 @@ const PaymentSuccess: React.FC = () => {
   return (
     <div className="checkout-page-container" style={{ textAlign: 'center', padding: '100px 20px' }}>
       <header className="checkout-header">
-        <h1 style={{ color: '#c0392b' }}>결제를 완료하지 못했습니다</h1>
+        <h1 style={{ color: '#c0392b' }}>{pending ? '결제 결과를 확인 중입니다' : '결제를 완료하지 못했습니다'}</h1>
         <p>{errorMessage}</p>
       </header>
 
@@ -148,8 +156,8 @@ const PaymentSuccess: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-          <button onClick={() => navigate('/cart')} className="btn-payment-execute" style={{ background: '#555' }}>
-            장바구니로 이동
+          <button onClick={() => pending ? window.location.reload() : navigate('/cart')} className="btn-payment-execute" style={{ background: '#555' }}>
+            {pending ? '결제 상태 다시 확인' : '장바구니로 이동'}
           </button>
           <button onClick={() => navigate('/')} className="btn-payment-execute">
             홈으로 이동

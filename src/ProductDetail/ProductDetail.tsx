@@ -171,7 +171,7 @@ const ProductDetail: React.FC = () => {
       color: currentSelectedOption ? currentSelectedOption.color : '기본',
       quantity: quantity,
       imageUrl: mainImage,
-      optionId: currentSelectedOption ? currentSelectedOption.id : 1 
+      optionId: currentSelectedOption?.id
     }];
 
     const totalAmount = finalCalculatedPrice * quantity;
@@ -252,7 +252,7 @@ const ProductDetail: React.FC = () => {
         color: currentSelectedOption ? currentSelectedOption.color : '기본',
         quantity: quantity,
         imageUrl: mainImage,
-        optionId: currentSelectedOption ? currentSelectedOption.id : 1 
+        optionId: currentSelectedOption?.id
       });
     }
 
