@@ -461,8 +461,8 @@ const AdminMain: React.FC = () => {
 
     if (isRefundStep) {
       const confirmMsg = newStatus === '주문취소'
-        ? '주문을 취소하시겠습니까?\n카드로 결제된 건이라면 결제 취소와 재고 복구가 함께 진행됩니다.'
-        : '반품 처리를 완료하시겠습니까?\n카드로 결제된 건이라면 환불과 재고 복구가 함께 진행됩니다.';
+        ? '주문을 취소하시겠습니까?\n카드 결제는 자동 취소됩니다. 무통장입금 건은 실제 환불 송금을 먼저 완료했는지 확인해 주세요.'
+        : '반품 처리를 완료하시겠습니까?\n카드 결제는 자동 환불됩니다. 무통장입금 건은 실제 환불 송금을 먼저 완료했는지 확인해 주세요.';
 
       if (!window.confirm(confirmMsg)) return;
     }
@@ -475,7 +475,7 @@ const AdminMain: React.FC = () => {
       const response = await apiFetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus, manualRefundConfirmed: isRefundStep ? 'true' : 'false' })
       });
 
       const result = await response.json().catch(() => null);
@@ -823,7 +823,7 @@ const AdminMain: React.FC = () => {
                   <div className="upload-placeholder-content">
                     <p>{title} 사진들을 드래그하여 드롭하세요</p>
                     <label htmlFor={`${type}-upload`} className="wide-file-label">컴퓨터에서 사진 선택</label>
-                    <input id={`${type}-upload`} type="file" accept="image/*" multiple className="hidden-file-input" onChange={(e) => {
+                    <input id={`${type}-upload`} type="file" accept="image/jpeg,image/png" multiple className="hidden-file-input" onChange={(e) => {
                       if (e.target.files && e.target.files.length > 0) {
                         handleMultipleBannerFiles(Array.from(e.target.files), type);
                       }
@@ -1041,7 +1041,7 @@ const AdminMain: React.FC = () => {
                         </svg>
                         <p>고해상도 룩북 사진들을 드래그하여 드롭하세요</p>
                         <label htmlFor="file-upload-input" className="wide-file-label">컴퓨터에서 사진 등록</label>
-                        <input id="file-upload-input" type="file" accept="image/*" multiple className="hidden-file-input" onChange={handleFileChange} />
+                        <input id="file-upload-input" type="file" accept="image/jpeg,image/png" multiple className="hidden-file-input" onChange={handleFileChange} />
                       </div>
                     )}
                   </div>
@@ -1106,7 +1106,7 @@ const AdminMain: React.FC = () => {
                         <span style={{ fontSize: '18px' }}>+</span>
                         사진 추가
                       </label>
-                      <input id="file-upload-more" type="file" accept="image/*" multiple className="hidden-file-input" onChange={handleFileChange} />
+                      <input id="file-upload-more" type="file" accept="image/jpeg,image/png" multiple className="hidden-file-input" onChange={handleFileChange} />
                     </div>
                   )}
                 </div>

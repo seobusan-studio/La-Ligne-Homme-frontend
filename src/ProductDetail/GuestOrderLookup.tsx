@@ -32,7 +32,8 @@ const GuestOrderLookup: React.FC = () => {
 
     try {
       const response = await apiFetch(
-        `${import.meta.env.VITE_API_URL}/api/orders/non-member?orderNumber=${encodeURIComponent(orderNumber)}&password=${encodeURIComponent(password)}`
+        `${import.meta.env.VITE_API_URL}/api/orders/non-member`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderNumber, password }) }
       );
       const result = await response.json();
 

@@ -28,6 +28,7 @@ const Signup: React.FC = () => {
    * ========================================================================= */
   const [verificationCode, setVerificationCode] = useState(''); // 유저가 입력한 인증번호 상태
   const [isCodeSent, setIsCodeSent] = useState(false);          // 인증번호 발송 완료 여부 스위치
+  const [verificationToken, setVerificationToken] = useState('');
   const [isVerified, setIsVerified] = useState(false);          // 휴대폰 최종 검증 완료 여부 가드선
   const [isEmailVerified, setIsEmailVerified] = useState(false); // 📧 [수혈] 이메일 중복 확인 완료 여부 가드선
   const [smsError, setSmsError] = useState('');                // SMS 인증 에러 메시지창
@@ -144,6 +145,7 @@ const Signup: React.FC = () => {
     // 번호가 수정되면 인증 유효성 리셋 처리 (우회 차단 가드)
     setIsCodeSent(false);
     setIsVerified(false);
+    setVerificationToken('');
     setVerificationCode('');
     setSmsError('');
   };
@@ -254,9 +256,11 @@ const Signup: React.FC = () => {
       const result = await response.json();
 
       if (response.ok && (result.status === 'SUCCESS' || result.success)) {
+        if (!result.data?.verificationToken) throw new Error('인증 증명 누락');
+        setVerificationToken(result.data.verificationToken);
         setIsVerified(true);
         setErrors(prev => ({ ...prev, phoneVerify: false }));
-        alert('휴대폰 인증이 완료되었습니다.');
+        alert('휴대폰 인증이 완료되었습니다. 10분 이내에 가입을 완료해 주세요.');
       } else {
         setSmsError(result.message || '인증번호가 일치하지 않습니다.');
       }
@@ -369,6 +373,7 @@ const Signup: React.FC = () => {
       const payload = {
         email: email.trim(),
         password,
+        verificationToken,
         name: lastName.trim() + firstName.trim(), 
         phone: phone.replace(/\D/g, ''),
         address: combinedAddress, 
