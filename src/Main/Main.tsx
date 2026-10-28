@@ -550,7 +550,7 @@ const Main: React.FC = () => {
               <span><strong>사업자등록번호</strong> 737-68-00698</span>
               <span><strong>통신판매업신고번호</strong> 제 2025-부산중구-0216호</span>
               <span><strong>개인정보보호책임자</strong> 김결</span>
-              <span><strong>무통장입금계좌</strong> 국민은행 473801-04-176193 (제니스)</span>
+              <span><strong>무통장입금계좌</strong> 새마을금고 9003-2372-0021-1 (김결)</span>
               <span><strong>운영시간</strong> 평일 10:00 ~ 오후 4:00</span>
             </div>
             <a href="https://pf.kakao.com/_xdfQsX" target="_blank" rel="noopener noreferrer" className="footer-kakao">

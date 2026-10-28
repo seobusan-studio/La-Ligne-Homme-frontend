@@ -335,9 +335,9 @@ const Checkout: React.FC = () => {
           totalAmount: result.data.amount,
           paymentMethod: paymentMethod,
           bankInfo: paymentMethod === '무통장입금' ? {
-            bankName: '국민은행',
-            accountNumber: '473801-04-176193',
-            depositor: '제니스'
+            bankName: '새마을금고',
+            accountNumber: '9003-2372-0021-1',
+            depositor: '김결'
           } : null
         };
         
